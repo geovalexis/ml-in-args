@@ -1,9 +1,13 @@
 name: ml-in-args
 channels:
   - defaults
+  - bioconda
 dependencies:
   - python=3.10.9
   - pip=22.0.1
   - bwa=0.7.17
+  - samtools=1.6
+  - bcftools=1.9
+  - vcftools=0.1.16
   - pip:
       - resfinder==4.3.1

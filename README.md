@@ -11,7 +11,3 @@ From the genetic information of resistant bacteria, it is possible to model the 
 ```
 conda env create -f environment.yml
 ```
-
-* Install other linux dependencies:
-    - samtools v1.17 and bcftools v1.17: http://www.htslib.org/download/
-    - vcftools v0.1.16: https://github.com/vcftools/vcftools
