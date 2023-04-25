@@ -21,3 +21,5 @@ python -m resfinder -o $output_dir \
 # - PointFinder_table.txt: predicted point mutations grouped into genes to which they belong.
 #
 # More information about the results can be found here: https://cge.food.dtu.dk/services/ResFinder-4.1/output.php
+
+# TODO: parse all genes found in <fasta_filename>.json and create a table where each genes is a column and the values are booleans (confere resistance or not)

@@ -1,0 +1,38 @@
+REF_GENOME = "../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"
+SAMPLES = ["1351.832"]
+
+rule all:
+    input:
+        "results/calls/all.vcf.gz"
+
+rule map_reads:
+    input:
+        REF_GENOME,
+        "../data/example_inputs/{sample}.fna"
+    output:
+        temp("results/mapped/{sample}.bam")
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "bwa mem -t {threads} {input} | samtools view -Sb - > {output}"
+
+rule sort_alignments:
+    input:
+        "results/mapped/{sample}.bam"
+    output:
+        temp("results/mapped/{sample}.sorted.bam")
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "samtools sort -o {output} {input}"
+
+rule call_variants:
+    input:
+        ref=REF_GENOME,
+        bam=expand("results/mapped/{sample}.sorted.bam", sample=SAMPLES)
+    output:
+        "results/calls/all.vcf.gz"
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools mpileup -f {input.ref} {input.bam} | bcftools call -mv -Oz > {output}"

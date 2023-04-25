@@ -1,0 +1,6 @@
+channels:
+  - defaults
+dependencies:
+  - pip=22.0.1
+  - pip:
+      - resfinder==4.3.1
