@@ -1,5 +1,6 @@
 REF_GENOME = "../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"
-SAMPLES = ["1351.832"]
+SAMPLES_DIR = "../data/samples"
+SAMPLES = ["1351.832", "1351.832.copy"]
 
 rule all:
     input:
@@ -7,14 +8,14 @@ rule all:
 
 rule map_reads:
     input:
-        REF_GENOME,
-        "../data/example_inputs/{sample}.fna"
+        ref=REF_GENOME,
+        fasta=SAMPLES_DIR+"/{sample}.fna"
     output:
         temp("results/mapped/{sample}.bam")
     conda:
         "envs/mapping.yaml"
     shell:
-        "bwa mem -t {threads} {input} | samtools view -Sb - > {output}"
+        "bwa mem -t {threads} {input.ref} {input.fasta} | samtools view -Sb - > {output}"
 
 rule sort_alignments:
     input:
