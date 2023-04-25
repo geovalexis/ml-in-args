@@ -1,4 +1,5 @@
 configfile: "config/config.yaml"
+samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.is_file()]
 
 rule all:
     input:
@@ -28,7 +29,7 @@ rule sort_alignments:
 rule call_variants:
     input:
         ref=config["reference_genome"],
-        bam=expand("results/mapped/{sample}.sorted.bam", sample=config["samples"])
+        bam=expand("results/mapped/{sample}.sorted.bam", sample=samples)
     output:
         temp("results/calls/all.vcf.gz")
     conda:
