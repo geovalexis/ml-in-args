@@ -6,8 +6,4 @@ From the genetic information of resistant bacteria, it is possible to model the 
 
 ## Requirements
 
-* Install conda environment from `environment.yml` file:
-
-```
-conda env create -f environment.yml
-```
+* Install [`snakemake`](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
