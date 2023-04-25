@@ -44,7 +44,7 @@ rule filter_variants:
     conda:
         "envs/filtering.yaml"
     shell:
-        "vcftools --gzvcf {input} --minQ 4 --minDP 10 --max-missing 0.2 --minQ 30 --recode --recode-INFO-all --stdout > {output}"
+        "vcftools --gzvcf {input} --minDP 4 --max-missing 0.2 --minQ 30 --recode --recode-INFO-all --stdout > {output}"
 
 rule keep_only_snps:
     input:
