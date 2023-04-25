@@ -3,7 +3,7 @@ SAMPLES = ["1351.832"]
 
 rule all:
     input:
-        "results/calls/all.vcf.gz"
+        "results/all.filtered.snps.extract.tsv"
 
 rule map_reads:
     input:
@@ -31,8 +31,38 @@ rule call_variants:
         ref=REF_GENOME,
         bam=expand("results/mapped/{sample}.sorted.bam", sample=SAMPLES)
     output:
-        "results/calls/all.vcf.gz"
+        temp("results/calls/all.vcf.gz")
     conda:
         "envs/calling.yaml"
     shell:
         "bcftools mpileup -f {input.ref} {input.bam} | bcftools call -mv -Oz > {output}"
+
+rule filter_variants:
+    input:
+        "results/calls/all.vcf.gz"
+    output:
+        temp("results/filters/all.filtered.vcf")
+    conda:
+        "envs/filtering.yaml"
+    shell:
+        "vcftools --gzvcf {input} --minQ 4 --minDP 10 --max-missing 0.2 --minQ 30 --recode --recode-INFO-all --stdout > {output}"
+
+rule keep_only_snps:
+    input:
+        "results/filters/all.filtered.vcf"
+    output:
+        temp("results/filters/all.filtered.snps.vcf")
+    conda:
+        "envs/filtering.yaml"
+    shell:
+        "vcftools --vcf {input} --remove-indels --recode --recode-INFO-all --stdout > {output}"
+
+rule select_columns:
+    input:
+        "results/filters/all.filtered.snps.vcf"
+    output:
+        "results/all.filtered.snps.extract.tsv"
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%TGT]\n' {input} -o {output}"
