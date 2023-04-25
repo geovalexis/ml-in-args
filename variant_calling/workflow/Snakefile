@@ -1,6 +1,4 @@
-REF_GENOME = "../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"
-SAMPLES_DIR = "../data/samples"
-SAMPLES = ["1351.832", "1351.832.copy"]
+configfile: "config/config.yaml"
 
 rule all:
     input:
@@ -8,8 +6,8 @@ rule all:
 
 rule map_reads:
     input:
-        ref=REF_GENOME,
-        fasta=SAMPLES_DIR+"/{sample}.fna"
+        ref=config["reference_genome"],
+        fasta=config["samples_dir"]+"/{sample}.fna"
     output:
         temp("results/mapped/{sample}.bam")
     conda:
@@ -29,8 +27,8 @@ rule sort_alignments:
 
 rule call_variants:
     input:
-        ref=REF_GENOME,
-        bam=expand("results/mapped/{sample}.sorted.bam", sample=SAMPLES)
+        ref=config["reference_genome"],
+        bam=expand("results/mapped/{sample}.sorted.bam", sample=config["samples"])
     output:
         temp("results/calls/all.vcf.gz")
     conda:
