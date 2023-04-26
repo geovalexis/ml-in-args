@@ -3,7 +3,7 @@ samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["sampl
 
 rule all:
     input:
-        expand("results/snps/{sample}.filtered.snps.extract.tsv", sample=samples)
+        expand("results/{sample}.filtered.snps.extract.tsv", sample=samples)
 
 rule map_reads:
     input:
@@ -61,7 +61,7 @@ rule select_columns:
     input:
         "results/filters/{sample}.filtered.snps.vcf"
     output:
-        "results/snps/{sample}.filtered.snps.extract.tsv"
+        "results/{sample}.filtered.snps.extract.tsv"
     conda:
         "envs/calling.yaml"
     shell:
