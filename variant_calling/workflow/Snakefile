@@ -43,9 +43,9 @@ rule filter_variants:
     output:
         temp("results/filters/all.filtered.vcf")
     conda:
-        "envs/filtering.yaml"
+        "envs/calling.yaml"
     shell:
-        "vcftools --gzvcf {input} --minDP 4 --max-missing 0.2 --minQ 30 --recode --recode-INFO-all --stdout > {output}"
+        "bcftools filter -i 'DP>=4 && QUAL>=30 && F_MISSING<0.2' {input} -o {output}"
 
 rule keep_only_snps:
     input:
