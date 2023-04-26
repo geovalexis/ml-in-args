@@ -1,0 +1,68 @@
+configfile: "config/config.yaml"
+samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.is_file()]
+
+rule all:
+    input:
+        expand("results/{sample}.filtered.snps.extract.tsv", sample=samples)
+
+rule map_reads:
+    input:
+        ref=config["reference_genome"],
+        fasta=config["samples_dir"]+"/{sample}.fna"
+    output:
+        temp("results/mapped/{sample}.bam")
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "bwa mem -t {threads} {input.ref} {input.fasta} | samtools view -Sb - > {output}"
+
+rule sort_alignments:
+    input:
+        "results/mapped/{sample}.bam"
+    output:
+        temp("results/mapped/{sample}.sorted.bam")
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "samtools sort -o {output} {input}"
+
+rule call_variants:
+    input:
+        ref=config["reference_genome"],
+        bam="results/mapped/{sample}.sorted.bam"
+    output:
+        temp("results/calls/{sample}.vcf.gz")
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools mpileup -f {input.ref} {input.bam} | bcftools call -mv -Oz > {output}"
+
+rule filter_variants:
+    input:
+        "results/calls/{sample}.vcf.gz"
+    output:
+        temp("results/filters/{sample}.filtered.vcf")
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools filter -i 'DP>=4 && QUAL>=30 && F_MISSING<0.2' {input} -o {output}"
+
+rule keep_only_snps:
+    input:
+        "results/filters/{sample}.filtered.vcf"
+    output:
+        temp("results/filters/{sample}.filtered.snps.vcf")
+    conda:
+        "envs/filtering.yaml"
+    shell:
+        "vcftools --vcf {input} --remove-indels --recode --recode-INFO-all --stdout > {output}"
+
+rule select_columns:
+    input:
+        "results/filters/{sample}.filtered.snps.vcf"
+    output:
+        "results/{sample}.filtered.snps.extract.tsv"
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%TGT]\n' {input} -o {output}"

@@ -1,8 +1,6 @@
-name: ml-in-args
 channels:
   - defaults
 dependencies:
-  - python=3.10.9
   - pip=22.0.1
   - pip:
       - resfinder==4.3.1
