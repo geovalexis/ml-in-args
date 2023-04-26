@@ -3,7 +3,7 @@ samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["sampl
 
 rule all:
     input:
-        "results/all.filtered.snps.extract.tsv"
+        expand("results/snps/{sample}.filtered.snps.extract.tsv", sample=samples)
 
 rule map_reads:
     input:
@@ -29,9 +29,9 @@ rule sort_alignments:
 rule call_variants:
     input:
         ref=config["reference_genome"],
-        bam=expand("results/mapped/{sample}.sorted.bam", sample=samples)
+        bam="results/mapped/{sample}.sorted.bam"
     output:
-        temp("results/calls/all.vcf.gz")
+        temp("results/calls/{sample}.vcf.gz")
     conda:
         "envs/calling.yaml"
     shell:
@@ -39,9 +39,9 @@ rule call_variants:
 
 rule filter_variants:
     input:
-        "results/calls/all.vcf.gz"
+        "results/calls/{sample}.vcf.gz"
     output:
-        temp("results/filters/all.filtered.vcf")
+        temp("results/filters/{sample}.filtered.vcf")
     conda:
         "envs/calling.yaml"
     shell:
@@ -49,9 +49,9 @@ rule filter_variants:
 
 rule keep_only_snps:
     input:
-        "results/filters/all.filtered.vcf"
+        "results/filters/{sample}.filtered.vcf"
     output:
-        temp("results/filters/all.filtered.snps.vcf")
+        temp("results/filters/{sample}.filtered.snps.vcf")
     conda:
         "envs/filtering.yaml"
     shell:
@@ -59,9 +59,9 @@ rule keep_only_snps:
 
 rule select_columns:
     input:
-        "results/filters/all.filtered.snps.vcf"
+        "results/filters/{sample}.filtered.snps.vcf"
     output:
-        "results/all.filtered.snps.extract.tsv"
+        "results/snps/{sample}.filtered.snps.extract.tsv"
     conda:
         "envs/calling.yaml"
     shell:
