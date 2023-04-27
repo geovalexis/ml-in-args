@@ -2,3 +2,4 @@
 **.snakemake
 **results
 *.log
+**databases

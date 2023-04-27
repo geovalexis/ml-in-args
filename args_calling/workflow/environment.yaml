@@ -1,0 +1,9 @@
+channels:
+  - defaults
+  - bioconda
+  - conda-forge
+dependencies:
+  - blast==2.13.0
+  - kma==1.4.9
+  - pip:
+      - resfinder==4.3.1
