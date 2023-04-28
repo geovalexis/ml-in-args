@@ -3,7 +3,7 @@ samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["sampl
 
 rule all:
     input:
-        expand("results/{sample}", sample=samples)
+        expand("results/args_parsed/{sample}.json", sample=samples)
 
 rule download_databases:
     output:
@@ -19,27 +19,23 @@ rule compute_args:
         fasta=config["samples_dir"]+"/{sample}.fna",
         databases_folder="databases/"
     output:
-        directory("results/{sample}")
+        directory("results/args/{sample}")
     conda:
-        "environment.yaml"
+        "envs/resfinder.yaml"
     shell:
         """
         python -m resfinder -o {output} -s '{config[specie]}' \
         --min_cov 0.6 --threshold 0.8 --acquired --point -ifa {input.fasta} \
         -db_res {input.databases_folder}/resfinder_db -db_point {input.databases_folder}/pointfinder_db
         """
-
-# Results will look like as follows:
-# - <fasta_filename>.json: json file with detailed results, including non-resistance genes.
-# - pheno_table_species.txt: table with species specific AMR phenotypes.
-# - pheno_table.txt: table with all AMR phenotypes.
-# - ResFinder_Hit_in_genome_seq.fsa: fasta sequence of resistance gene hits found in the input data (query).
-# - ResFinder_Resistance_gene_seq.fsa: fasta sequence of resistance gene hits found in the database (reference).
-# - ResFinder_results_tab.txt: tab seperated table with predicted resistance genes.
-# - ResFinder_results.txt: predicted resistance genes grouped by antibiotic class and hit alignments to reference resistance genes.
-# - PointFinder_results.txt: tab seperated table with predicted point mutations leading to antibiotic resistance.
-# - PointFinder_table.txt: predicted point mutations grouped into genes to which they belong.
-#
-# More information about the results can be found here: https://cge.food.dtu.dk/services/ResFinder-4.1/output.php
-
-# TODO: parse all genes found in <fasta_filename>.json and create a table where each genes is a column and the values are booleans (confere resistance or not)
+rule parse_results:
+    input:
+        results_dir="results/args/{sample}"
+    output:
+        "results/args_parsed/{sample}.json"
+    conda:
+        "envs/parsing.yaml"
+    shell:
+        """
+        python workflow/scripts/resfinder_parser.py --results-dir {input.results_dir} --output {output}
+        """
