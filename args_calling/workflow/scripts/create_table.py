@@ -44,16 +44,15 @@ def process_args_table(
 
 
 def main(
-    results_dir: str = typer.Option(
-        ..., help="Path to the results folder with parsed results from ResFinder"
+    results_files: List[str] = typer.Argument(
+        ..., help="List of path to the parsed results from ResFinder"
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):
     # Read and process all the results files
     samples_list = []
     args_table = defaultdict(list)
-    results_filepaths = os.scandir(results_dir)
-    for res_filepath in results_filepaths:
+    for res_filepath in results_files:
         with open(res_filepath, "r") as json_file:
             sample_results = ResfinderResult(**json.load(json_file))
         samples_list.append(sample_results.sample_name)
