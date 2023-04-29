@@ -31,6 +31,9 @@ def process_args_table(
     n_processed_samples: int,
 ):
     args_to_add = set(["_".join(arg.split("_")[:1]) for arg in sample_results.genes])
+    logger.info(
+        f"Adding {len(args_to_add)} ARGs corresponding to sample {sample_results.sample_name}"
+    )
     # Add the sample values to the table
     for arg in table:
         if arg in args_to_add:
@@ -49,6 +52,7 @@ def main(
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):
+    logger.info(f"Reading {len(results_files)} results files...")
     # Read and process all the results files
     samples_list = []
     args_table = defaultdict(list)
@@ -58,8 +62,10 @@ def main(
         samples_list.append(sample_results.sample_name)
         process_args_table(sample_results, args_table, len(samples_list))
     # Create dataframe
+    logger.info(f"Creating dataframe with total of {len(args_table)} ARGs...")
     args_table = pd.DataFrame.from_records(args_table, index=samples_list)
     args_table.to_csv(output, index_label="sample_name")
+    logger.info(f"Results saved to {output} successfully.")
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ rule compute_args:
         fasta=config["samples_dir"]+"/{sample}.fna",
         databases_folder="databases/"
     output:
-        directory("results/args/{sample}")
+        temp(directory("results/args/{sample}"))
     conda:
         "envs/resfinder.yaml"
     shell:
@@ -33,7 +33,7 @@ rule parse_results:
     input:
         results_dir="results/args/{sample}"
     output:
-        "results/args_parsed/{sample}.json"
+       temp( "results/args_parsed/{sample}.json")
     conda:
         "envs/parsing.yaml"
     shell:
