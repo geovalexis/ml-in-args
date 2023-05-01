@@ -1,0 +1,30 @@
+configfile: "../config.yaml"
+
+rule all:
+    input:
+        config["samples_dir"],
+        "results/amr_labels.csv"
+
+rule download_metadata:
+    output:
+        "results/BVBRC_genome_amr.csv"
+    shell:
+        "sh workflow/scripts/download_metadata.sh '{config[bv-brc_query]}' {output}"
+
+rule download_samples:
+    input:
+        "results/BVBRC_genome_amr.csv"
+    output:
+        directory(config["samples_dir"])
+    shell:
+        "sh workflow/scripts/download_samples.sh {input} {output}"
+
+rule get_amr_labels:
+    input:
+        "results/BVBRC_genome_amr.csv"
+    output:
+        "results/amr_labels.csv"
+    conda:
+        "envs/parsing.yaml"
+    shell:
+        "python workflow/scripts/get_amr_labels.py --bvbrc-file {input} --output {output}"
