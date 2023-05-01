@@ -1,9 +1,9 @@
-configfile: "config/config.yaml"
+configfile: "../config.yaml"
 samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.is_file()]
 
 rule all:
     input:
-        expand("results/{sample}.filtered.snps.extract.tsv", sample=samples)
+        "results/snps_table.csv"
 
 rule map_reads:
     input:
@@ -61,8 +61,18 @@ rule select_columns:
     input:
         "results/filters/{sample}.filtered.snps.vcf"
     output:
-        "results/{sample}.filtered.snps.extract.tsv"
+        temp("results/{sample}.filtered.snps.extract.tsv")
     conda:
         "envs/calling.yaml"
     shell:
-        "bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%TGT]\n' {input} -o {output}"
+        "bcftools query -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\n' {input} -o {output}"
+
+rule merge_samples:
+    input:
+        expand("results/{sample}.filtered.snps.extract.tsv", sample=samples)
+    output:
+        "results/snps_table.csv"
+    conda:
+        "envs/merging.yaml"
+    shell:
+        "python workflow/scripts/merge_samples.py {input} --output {output}"
