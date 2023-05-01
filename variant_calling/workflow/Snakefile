@@ -1,4 +1,4 @@
-configfile: "config/config.yaml"
+configfile: "../config.yaml"
 samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.is_file()]
 
 rule all:
