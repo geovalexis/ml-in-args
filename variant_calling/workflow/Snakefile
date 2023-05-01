@@ -65,4 +65,4 @@ rule select_columns:
     conda:
         "envs/calling.yaml"
     shell:
-        "bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t[%TGT]\n' {input} -o {output}"
+        "bcftools query -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\n' {input} -o {output}"
