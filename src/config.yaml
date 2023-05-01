@@ -1,4 +1,4 @@
 bv-brc_query: "eq(genome_id%2C*)%26genome(eq(taxon_lineage_ids%2C2))%26and(eq(taxon_id%2C1351)%2Ceq(pmid%2C29617860))%26sort(id)%26limit(1455)"
 samples_dir: "../../data/samples"
 specie: "Enterococcus faecalis"
-reference_genome: "../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"
+reference_genome: "../../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"
