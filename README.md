@@ -22,3 +22,5 @@ From the genetic information of resistant bacteria, it is possible to model the 
 * Variant calling:
     * Take secondary mutations into account
     * Use one-hot-encoded instead of label enconding
+* General workflow:
+    * Use [data-dependant conditional execution](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution) to run all workflows instead of custom `run_workflow.py` script

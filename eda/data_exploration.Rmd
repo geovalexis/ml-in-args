@@ -1,0 +1,18 @@
+---
+title: "Dataset exploration"
+author: "Geovanny Risco"
+date: '`r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  github_document:
+    keep_html: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+is_render_mode <- !is.null(knitr::current_input())
+view_method <- if (is_render_mode) "render" else "viewer"
+```
