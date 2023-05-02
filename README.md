@@ -1,4 +1,4 @@
-# Machine Learning (ML) in Antibiotic Resistance Genes (ARGs)
+# Early prediction of Antimicrobial Resistance (AMR) using Machine Learning
 
 ## Summary
 
