@@ -4,7 +4,7 @@ author: "Geovanny Risco"
 date: '`r format(Sys.Date(), "%B %d, %Y")`'
 output:
   github_document:
-    keep_html: yes
+    keep_html: no
     number_sections: yes
     toc: yes
     toc_depth: 3
@@ -15,4 +15,38 @@ knitr::opts_chunk$set(echo = TRUE)
 
 is_render_mode <- !is.null(knitr::current_input())
 view_method <- if (is_render_mode) "render" else "viewer"
+```
+
+# Import libraries
+
+```{r}
+library(tidyverse)
+```
+
+# Read raw data
+
+```{r}
+# ARGs (Antibiotic Resistance Genes)
+args_data <- read_csv("src/args_calling/results/args_table.csv", col_types = cols("sample_name" = col_character()))
+head(args_data)
+# SNPs (Single Nucleotide Polymorphisms)
+snps_data <- read_csv("src/variant_calling/results/snps_table.csv", col_types = cols("sample_name" = col_character()))
+head(snps_data)
+# AMR (Antimicrobial Resistance) labels
+amr_labels <- read_csv("src/data_retrieval/results/amr_labels.csv", col_types = cols("Genome ID" = col_character()))
+head(amr_labels)
+```
+
+# Explore data
+
+## ARGs
+
+```{r}
+#TODO: plot number of resistance genes per antibiotic
+```
+
+## SNPs
+
+```{r}
+#TODO
 ```
