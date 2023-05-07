@@ -51,12 +51,12 @@ def main(
     with open(biosamples_summary) as f:
         data = json.load(f)
     samples_uids = data["result"]["uids"]
-    logger.info(f"Found {len(samples_uids)} samples in '{biosamples_summary}'.")
+    logger.info(f"Parsing antibiogram tables for {len(samples_uids)} samples...")
     biosamples_parsed = []
     for sample_uid in samples_uids:
         sample_accession_id = data["result"][sample_uid]["accession"]
         sample_data = data["result"][sample_uid]["sampledata"]
-        logger.info(f"Parsing antibiogram table for sample '{sample_accession_id}'...")
+        # logger.info(f"Parsing antibiogram table for sample '{sample_accession_id}'...")
         antibiogram_df = parse_antibiogram_table(sample_data)
         antibiogram_record = process_amr_labels(antibiogram_df, sample_accession_id)
         biosamples_parsed.extend(antibiogram_record)
