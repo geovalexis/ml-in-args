@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 from typing import List
 
 import pandas as pd
@@ -43,33 +42,24 @@ def process_amr_labels(
     return antibiogram_df.to_dict(orient="records")
 
 
-def parse_biosample_amr_labels(filepath: str) -> List:
-    with open(filepath) as f:
-        data = json.load(f)
-    sample_uid = data["result"]["uids"][0]
-    sample_accession_id = data["result"][sample_uid]["accession"]
-    sample_data = data["result"][sample_uid]["sampledata"]
-    logger.info(f"Parsing antibiogram table for sample '{sample_uid}'...")
-    antibiogram_df = parse_antibiogram_table(sample_data)
-    antibiogram_record = process_amr_labels(antibiogram_df, sample_accession_id)
-    return antibiogram_record
-
-
 def main(
-    biosamples_summary_dir: str = typer.Option(
-        ..., help="Path to the directory with biosamples summary (JSON files)"
+    biosamples_summary: str = typer.Option(
+        ..., help="Path to JSON file containing biosamples metadata"
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):
-    biosamples_summary_filepaths = [
-        entry.path
-        for entry in os.scandir(biosamples_summary_dir)
-        if entry.name.endswith(".json")
-    ]
-    logger.info(f"Found {len(biosamples_summary_filepaths)} biosamples summary files.")
+    with open(biosamples_summary) as f:
+        data = json.load(f)
+    samples_uids = data["result"]["uids"]
+    logger.info(f"Found {len(samples_uids)} samples in '{biosamples_summary}'.")
     biosamples_parsed = []
-    for filepath in biosamples_summary_filepaths:
-        biosamples_parsed.extend(parse_biosample_amr_labels(filepath))
+    for sample_uid in samples_uids:
+        sample_accession_id = data["result"][sample_uid]["accession"]
+        sample_data = data["result"][sample_uid]["sampledata"]
+        logger.info(f"Parsing antibiogram table for sample '{sample_accession_id}'...")
+        antibiogram_df = parse_antibiogram_table(sample_data)
+        antibiogram_record = process_amr_labels(antibiogram_df, sample_accession_id)
+        biosamples_parsed.extend(antibiogram_record)
     amr_labels_df = pd.DataFrame.from_records(biosamples_parsed)
     amr_labels_df.to_csv(output, index=False)
     logger.info(f"Successfully saved antibiogram table to '{output}'.")

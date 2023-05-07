@@ -1,7 +1,5 @@
 configfile: "../config.yaml"
 
-metadata_dir = config["tmp_dir"] + "/biosamples_metadata"
-
 rule all:
     input:
         config["samples_dir"]+"/.moved_completed",
@@ -23,25 +21,24 @@ rule get_biosamples_metadata:
     input:
         config["biosamples_accessions"]
     output:
-        directory(metadata_dir)+f"/.metadata_completed"
+        config["tmp_dir"]+"/biosamples_summary.json"
     conda:
         "envs/ncbi.yaml"
     shell:
         """
-        bash scripts/get_biosamples_metadata.sh '{input}' '{metadata_dir}'
-        touch '{output}'
+        bash scripts/get_biosamples_metadata.sh '{input}' '{output}'
         """
 
 rule get_amr_labels:
     input:
-        metadata_dir+f"/.metadata_completed"
+        config["tmp_dir"]+"/biosamples_summary.json"
     output:
         "results/amr_labels.csv"
     conda:
         "envs/parsing.yaml"
     shell:
         """
-        python scripts/get_amr_labels.py --biosamples-summary-dir '{metadata_dir}' --output '{output}'
+        python scripts/get_amr_labels.py --biosamples-summary '{input}' --output '{output}'
         """
 
 rule download_assemblies:
