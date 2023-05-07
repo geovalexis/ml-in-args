@@ -48,21 +48,25 @@ def main(
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):
+    logger.info(f"Loading biosamples summary from '{biosamples_summary}'...")
     with open(biosamples_summary) as f:
-        data = json.load(f)
-    samples_uids = data["result"]["uids"]
-    logger.info(f"Parsing antibiogram tables for {len(samples_uids)} samples...")
+        data = [json.loads(line) for line in f]
+        logger.info(f"Found {len(data)} chunks.")
     biosamples_parsed = []
-    for sample_uid in samples_uids:
-        sample_accession_id = data["result"][sample_uid]["accession"]
-        sample_data = data["result"][sample_uid]["sampledata"]
-        # logger.info(f"Parsing antibiogram table for sample '{sample_accession_id}'...")
-        antibiogram_df = parse_antibiogram_table(sample_data)
-        antibiogram_record = process_amr_labels(antibiogram_df, sample_accession_id)
-        biosamples_parsed.extend(antibiogram_record)
+    for index, data_chunk in enumerate(data):
+        samples_uids = data_chunk["result"]["uids"]
+        logger.info(f"Parsing chunk {index}, with {len(samples_uids)} samples...")
+        for sample_uid in samples_uids:
+            sample_accession_id = data_chunk["result"][sample_uid]["accession"]
+            sample_data = data_chunk["result"][sample_uid]["sampledata"]
+            # logger.info(f"Parsing antibiogram table for sample '{sample_accession_id}'...")
+            antibiogram_df = parse_antibiogram_table(sample_data)
+            antibiogram_record = process_amr_labels(antibiogram_df, sample_accession_id)
+            biosamples_parsed.extend(antibiogram_record)
+        logger.info(f"...successfully parsed chunk {index}.")
     amr_labels_df = pd.DataFrame.from_records(biosamples_parsed)
     amr_labels_df.to_csv(output, index=False)
-    logger.info(f"Successfully saved antibiogram table to '{output}'.")
+    logger.info(f"Successfully saved antibiogram tables to '{output}'.")
 
 
 if __name__ == "__main__":
