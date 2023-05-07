@@ -1,11 +1,15 @@
 Dataset exploration
 ================
 Geovanny Risco
-May 03, 2023
+May 04, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
 - <a href="#2-read-raw-data" id="toc-2-read-raw-data">2 Read raw data</a>
+- <a href="#3-explore-data" id="toc-3-explore-data">3 Explore data</a>
+  - <a href="#31-args" id="toc-31-args">3.1 ARGs</a>
+  - <a href="#32-snps" id="toc-32-snps">3.2 SNPs</a>
+  - <a href="#33-amr-labels" id="toc-33-amr-labels">3.3 AMR labels</a>
 
 # 1 Import libraries
 
@@ -109,3 +113,48 @@ head(amr_labels)
     ## #   variable names 1: chloramphenicol, 2: ciprofloxacin, 3: daptomycin,
     ## #   4: erythromycin, 5: gentamicin, 6: kanamycin, 7: linezolid,
     ## #   8: nitrofurantoin
+
+# 3 Explore data
+
+## 3.1 ARGs
+
+``` r
+#TODO: plot number of resistance genes per antibiotic
+```
+
+## 3.2 SNPs
+
+``` r
+#TODO
+```
+
+## 3.3 AMR labels
+
+Count how many samples are resistance to each antibiotic:
+
+``` r
+amr_labels %>%
+  select(-`Genome ID`) %>%
+  summarise_all(~ sum(.x == 1)) %>%
+  gather(key = "antibiotic", value = "resistant samples") %>%
+  arrange(desc(`resistant samples`))
+```
+
+    ## # A tibble: 15 x 2
+    ##    antibiotic                `resistant samples`
+    ##    <chr>                                   <int>
+    ##  1 tetracycline                               62
+    ##  2 tylosin                                    55
+    ##  3 erythromycin                               52
+    ##  4 kanamycin                                  48
+    ##  5 gentamicin                                 30
+    ##  6 streptomycin                               28
+    ##  7 chloramphenicol                            19
+    ##  8 ciprofloxacin                               1
+    ##  9 daptomycin                                  1
+    ## 10 nitrofurantoin                              1
+    ## 11 quinupristin/dalfopristin                   1
+    ## 12 linezolid                                   0
+    ## 13 penicillin                                  0
+    ## 14 tigecycline                                 0
+    ## 15 vancomycin                                  0

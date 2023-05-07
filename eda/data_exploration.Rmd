@@ -50,3 +50,15 @@ head(amr_labels)
 ```{r}
 #TODO
 ```
+
+## AMR labels
+
+Count how many samples are resistance to each antibiotic:
+
+```{r}
+amr_labels %>%
+  select(-`Genome ID`) %>%
+  summarise_all(~ sum(.x == 1)) %>%
+  gather(key = "antibiotic", value = "resistant samples") %>%
+  arrange(desc(`resistant samples`))
+```

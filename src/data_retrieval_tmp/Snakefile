@@ -1,0 +1,71 @@
+configfile: "../config.yaml"
+
+rule all:
+    input:
+        config["samples_dir"]+"/.moved_completed",
+        "results/amr_labels.csv"
+
+rule get_assembly_accession_ids:
+    input:
+        config["biosamples_accessions"]
+    output:
+        config["tmp_dir"]+"/assembly_accession_ids.txt"
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        """
+        bash scripts/get_assembly_accession_ids.sh '{input}' '{output}'
+        """
+
+rule get_biosamples_metadata:
+    input:
+        config["biosamples_accessions"]
+    output:
+        config["tmp_dir"]+"/biosamples_summary.json"
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        """
+        bash scripts/get_biosamples_metadata.sh '{input}' '{output}'
+        """
+
+rule get_amr_labels:
+    input:
+        config["tmp_dir"]+"/biosamples_summary.json"
+    output:
+        "results/amr_labels.csv"
+    conda:
+        "envs/parsing.yaml"
+    shell:
+        """
+        python scripts/get_amr_labels.py --biosamples-summary '{input}' --output '{output}'
+        """
+
+rule download_assemblies:
+    input:
+        config["tmp_dir"]+"/assembly_accession_ids.txt"
+    output:
+        temp(config["tmp_dir"]+"/ncbi_dataset.zip")
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        "datasets download genome accession --inputfile '{input}' --filename '{output}'"
+
+rule unzip_assemblies:
+    input:
+        config["tmp_dir"]+"/ncbi_dataset.zip"
+    output:
+        directory(config["tmp_dir"]+"/ncbi")
+    shell:
+        "unzip -q '{input}' -d '{output}'"
+
+rule move_fasta_files:
+    input:
+        config["tmp_dir"]+"/ncbi"
+    output:
+        directory(config["samples_dir"])+"/.moved_completed"
+    shell:
+        """
+        find '{input}/ncbi_dataset/data/' -maxdepth 2 -iname "*.fna" -print0 | xargs -0 -I {{}} mv "{{}}" '{config[samples_dir]}/'
+        touch '{output}'
+        """
