@@ -1,0 +1,9 @@
+channels:
+  - defaults
+  - conda-forge
+  - anaconda
+dependencies:
+  - pandas==2.0.1
+  - lxml==4.9.2
+  - lxml-stubs==0.4.0
+  - typer==0.7.0
