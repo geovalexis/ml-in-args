@@ -16,7 +16,7 @@ rule get_assembly_accession_ids:
         "envs/ncbi.yaml"
     shell:
         """
-        bash scripts/get_assembly_accession_ids.sh {input} {output}
+        bash scripts/get_assembly_accession_ids.sh '{input}' '{output}'
         """
 
 rule get_biosamples_metadata:
@@ -28,8 +28,8 @@ rule get_biosamples_metadata:
         "envs/ncbi.yaml"
     shell:
         """
-        bash scripts/get_biosamples_metadata.sh {input} {metadata_dir}
-        touch {output}
+        bash scripts/get_biosamples_metadata.sh '{input}' '{metadata_dir}'
+        touch '{output}'
         """
 
 rule get_amr_labels:
@@ -41,7 +41,7 @@ rule get_amr_labels:
         "envs/parsing.yaml"
     shell:
         """
-        python scripts/get_amr_labels.py --biosamples-summary-dir {metadata_dir} --output {output}
+        python scripts/get_amr_labels.py --biosamples-summary-dir '{metadata_dir}' --output '{output}'
         """
 
 rule download_assemblies:
@@ -52,7 +52,7 @@ rule download_assemblies:
     conda:
         "envs/ncbi.yaml"
     shell:
-        "datasets download genome accession --inputfile {input} --filename {output}"
+        "datasets download genome accession --inputfile '{input}' --filename '{output}'"
 
 rule unzip_assemblies:
     input:
@@ -60,7 +60,7 @@ rule unzip_assemblies:
     output:
         directory(config["tmp_dir"]+"/ncbi")
     shell:
-        "unzip {input} -d {output}"
+        "unzip '{input}' -d '{output}'"
 
 rule move_fasta_files:
     input:
@@ -69,6 +69,6 @@ rule move_fasta_files:
         directory(config["samples_dir"])+"/.moved_completed"
     shell:
         """
-        find {input}/ncbi_dataset/data/ -maxdepth 2 -iname "*.fna" -print0 | xargs -0 -I {{}} mv -v "{{}}" {config[samples_dir]}/
-        touch {output}
+        find '{input}/ncbi_dataset/data/' -maxdepth 2 -iname "*.fna" -print0 | xargs -0 -I {{}} mv -v "{{}}" '{config[samples_dir]}/'
+        touch '{output}'
         """

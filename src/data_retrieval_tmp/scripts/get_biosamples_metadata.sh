@@ -16,7 +16,7 @@ i=1
 n_samples=$(echo $biosamples_accession_ids | wc -w)
 for id in $biosamples_accession_ids
 do
-    esearch -db biosample -query $id | efetch -format docsum -mode json > $output_dir/$id.json
+    esearch -db biosample -query $id | efetch -format docsum -mode json > "$output_dir/$id.json"
     ProgressBar $i $n_samples
     i=$((i+1))
 done
