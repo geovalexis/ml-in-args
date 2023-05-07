@@ -1,0 +1,46 @@
+configfile: "../config.yaml"
+
+rule all:
+    input:
+        config["samples_dir"]+"/.moved_completed"
+
+rule get_assembly_accession_ids:
+    input:
+        "aac.00483-19-s0001.csv"
+    output:
+        "assembly_accession_ids.txt"
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        """
+        bash scripts/get_assembly_accession_ids.sh {input} {output}
+        """
+
+rule download_assemblies:
+    input:
+        "assembly_accession_ids.txt"
+    output:
+        "ncbi_dataset.zip"
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        "datasets download genome accession --inputfile {input} --filename {output}"
+
+rule unzip_assemblies:
+    input:
+        "ncbi_dataset.zip"
+    output:
+        directory("ncbi_dataset")
+    shell:
+        "unzip {input} -d {output}"
+
+rule move_fasta_files:
+    input:
+        "ncbi_dataset"
+    output:
+        directory(config["samples_dir"])+"/.moved_completed"
+    shell:
+        """
+        find {input}/ncbi_dataset/data/ -maxdepth 2 -iname "*.fna" -print0 | xargs -0 -I {{}} mv -v "{{}}" {config[samples_dir]}/
+        touch {output}
+        """
