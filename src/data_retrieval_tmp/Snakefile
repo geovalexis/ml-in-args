@@ -1,18 +1,17 @@
 configfile: "../config.yaml"
 
-biosamples_accessions = "aac.00483-19-s0001.csv"
-metadata_dir = "biosamples_metadata"
+metadata_dir = config["tmp_dir"] + "/biosamples_metadata"
 
 rule all:
     input:
         config["samples_dir"]+"/.moved_completed",
-        "amr_labels.csv"
+        "results/amr_labels.csv"
 
 rule get_assembly_accession_ids:
     input:
-        biosamples_accessions
+        config["biosamples_accessions"]
     output:
-        "assembly_accession_ids.txt"
+        config["tmp_dir"]+"/assembly_accession_ids.txt"
     conda:
         "envs/ncbi.yaml"
     shell:
@@ -22,7 +21,7 @@ rule get_assembly_accession_ids:
 
 rule get_biosamples_metadata:
     input:
-        biosamples_accessions
+        config["biosamples_accessions"]
     output:
         directory(metadata_dir)+f"/.metadata_completed"
     conda:
@@ -37,7 +36,7 @@ rule get_amr_labels:
     input:
         metadata_dir+f"/.metadata_completed"
     output:
-        "amr_labels.csv"
+        "results/amr_labels.csv"
     conda:
         "envs/parsing.yaml"
     shell:
@@ -47,9 +46,9 @@ rule get_amr_labels:
 
 rule download_assemblies:
     input:
-        "assembly_accession_ids.txt"
+        config["tmp_dir"]+"/assembly_accession_ids.txt"
     output:
-        temp("ncbi_dataset.zip")
+        temp(config["tmp_dir"]+"/ncbi_dataset.zip")
     conda:
         "envs/ncbi.yaml"
     shell:
@@ -57,15 +56,15 @@ rule download_assemblies:
 
 rule unzip_assemblies:
     input:
-        "ncbi_dataset.zip"
+        config["tmp_dir"]+"/ncbi_dataset.zip"
     output:
-        directory("ncbi")
+        directory(config["tmp_dir"]+"/ncbi")
     shell:
         "unzip {input} -d {output}"
 
 rule move_fasta_files:
     input:
-        "ncbi"
+        config["tmp_dir"]+"/ncbi"
     output:
         directory(config["samples_dir"])+"/.moved_completed"
     shell:
