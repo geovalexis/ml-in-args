@@ -11,8 +11,8 @@ rule download_databases:
     shell:
         """
         git clone https://bitbucket.org/genomicepidemiology/resfinder_db/ databases/resfinder_db
-        git clone https://bitbucket.org/genomicepidemiology/pointfinder_db/ databases/pointfinder_db
         """
+        #git clone https://bitbucket.org/genomicepidemiology/pointfinder_db/ databases/pointfinder_db # Not needed anymore
 
 rule compute_args:
     input:
@@ -24,10 +24,9 @@ rule compute_args:
         "envs/resfinder.yaml"
     shell:
         """
-        python -m resfinder -o {output} -s '{config[specie]}' \
-        --min_cov 0.6 --threshold 0.8 --acquired --point -ifa {input.fasta} \
-        -db_res {input.databases_folder}/resfinder_db \
-        -db_point {input.databases_folder}/pointfinder_db
+        python -m resfinder -o {output} \
+        --min_cov 0.6 --threshold 0.8 --acquired -ifa {input.fasta} \
+        -db_res {input.databases_folder}/resfinder_db
         """
 rule parse_results:
     input:
