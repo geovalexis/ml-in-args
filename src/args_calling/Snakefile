@@ -37,7 +37,7 @@ rule parse_results:
         "envs/parsing.yaml"
     shell:
         """
-        python workflow/scripts/resfinder_parser.py \
+        python scripts/resfinder_parser.py \
         --results-dir {input.results_dir} \
         --output {output}
         """
@@ -50,4 +50,4 @@ rule create_table:
     conda:
         "envs/parsing.yaml"
     shell:
-        "python workflow/scripts/create_table.py {input} --output {output}"
+        "python scripts/create_table.py {input} --output {output}"
