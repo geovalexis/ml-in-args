@@ -8,7 +8,7 @@ import typer
 
 logger = logging.getLogger(__name__)
 
-column_names = ["CHROM", "POS", "REF", "ALT", "TGT"]
+column_names = ["CHROM", "POS", "REF", "ALT", "TGT", "GENE_NAME"]
 
 NO_VARIATON_TOKEN = "N"
 
@@ -28,7 +28,7 @@ def label_encode_snps(snps_table: pd.DataFrame):
 def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
     snps_pivot = (
         snps_data[["POS", "ALT"]]
-        .set_index("POS")
+        .set_index("POS") #TODO: Set index as GENE_NAME+POSITION_IN_GENE
         .rename(columns={"ALT": sample_name})
         .transpose()
     )

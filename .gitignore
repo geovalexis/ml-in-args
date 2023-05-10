@@ -1,5 +1,6 @@
 **data
 **.snakemake
 **results
+**reference_genomes
 *.log
 **databases

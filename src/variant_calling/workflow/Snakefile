@@ -1,26 +1,55 @@
 configfile: "../config.yaml"
-samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.name.endswith(".fna")]
+
+species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
+samples_by_specie = {
+    specie.name: [os.path.splitext(sample.name)[0] for sample in os.scandir(specie) if sample.name.endswith(".fna")] 
+    for specie in species_paths
+}
+
+def merge_samples_by_specie(wildcards):
+    return expand("results/{{specie_id}}/{sample}.filtered.snps.extract.tsv", sample=samples_by_specie[wildcards.specie_id])
 
 rule all:
     input:
-        "results/snps_table.csv"
+        expand("results/{specie_id}/snps_table.csv", specie_id=samples_by_specie.keys())
 
-rule map_reads:
-    input:
-        ref=config["reference_genome"],
-        fasta=config["samples_dir"]+"/{sample}.fna"
+rule download_reference_genomes:
     output:
-        temp("results/mapped/{sample}.bam")
+        fasta="reference_genomes/{specie_id}/{specie_id}.fna",
+        gff="reference_genomes/{specie_id}/{specie_id}.gff"
+    conda:
+        "envs/ncbi.yaml"
+    shell:
+        """
+        bash workflow/scripts/download_reference_genome.sh {wildcards.specie_id} {output.fasta} {output.gff}
+        """
+
+rule index_reference_genome:
+    input:
+        "reference_genomes/{specie_id}/{specie_id}.fna"
+    output:
+        "reference_genomes/{specie_id}/{specie_id}"+".fna.pac"
     conda:
         "envs/mapping.yaml"
     shell:
-        "bwa mem -t {threads} {input.ref} {input.fasta} | samtools view -Sb - > {output}"
+        "bwa index {input}"
+
+rule map_reads:
+    input:
+        ref="reference_genomes/{specie_id}/{specie_id}"+".fna.pac",
+        fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna"
+    output:
+        "results/mapped/{specie_id}/{sample}.bam"
+    conda:
+        "envs/mapping.yaml"
+    shell:
+        "bwa mem -t {threads} reference_genomes/{wildcards.specie_id}/{wildcards.specie_id}.fna {input.fasta} | samtools view -Sb - > {output}"
 
 rule sort_alignments:
     input:
-        "results/mapped/{sample}.bam"
+        "results/mapped/{specie_id}/{sample}.bam"
     output:
-        temp("results/mapped/{sample}.sorted.bam")
+        "results/mapped/{specie_id}/{sample}.sorted.bam"
     conda:
         "envs/mapping.yaml"
     shell:
@@ -28,10 +57,10 @@ rule sort_alignments:
 
 rule call_variants:
     input:
-        ref=config["reference_genome"],
-        bam="results/mapped/{sample}.sorted.bam"
+        ref="reference_genomes/{specie_id}/{specie_id}.fna",
+        bam="results/mapped/{specie_id}/{sample}.sorted.bam"
     output:
-        temp("results/calls/{sample}.vcf.gz")
+        "results/calls/{specie_id}/{sample}.vcf.gz"
     conda:
         "envs/calling.yaml"
     shell:
@@ -39,9 +68,9 @@ rule call_variants:
 
 rule filter_variants:
     input:
-        "results/calls/{sample}.vcf.gz"
+        "results/calls/{specie_id}/{sample}.vcf.gz"
     output:
-        temp("results/filters/{sample}.filtered.vcf")
+        "results/filters/{specie_id}/{sample}.filtered.vcf"
     conda:
         "envs/calling.yaml"
     shell:
@@ -49,29 +78,54 @@ rule filter_variants:
 
 rule keep_only_snps:
     input:
-        "results/filters/{sample}.filtered.vcf"
+        "results/filters/{specie_id}/{sample}.filtered.vcf"
     output:
-        temp("results/filters/{sample}.filtered.snps.vcf")
+        "results/filters/{specie_id}/{sample}.filtered.snps.vcf"
     conda:
         "envs/filtering.yaml"
     shell:
         "vcftools --vcf {input} --remove-indels --recode --recode-INFO-all --stdout > {output}"
 
-rule select_columns:
+rule gff2bed:
     input:
-        "results/filters/{sample}.filtered.snps.vcf"
+        gff="reference_genomes/{specie_id}/{specie_id}.gff"
     output:
-        temp("results/{sample}.filtered.snps.extract.tsv")
+        "reference_genomes/{specie_id}/{specie_id}.bed"
+    shell:
+        """
+        bash workflow/scripts/gff2bed.sh {input.gff} {output}
+        """
+
+rule annotate_snps:
+    input:
+        reference_bed="reference_genomes/{specie_id}/{specie_id}.bed",
+        vcf="results/filters/{specie_id}/{sample}.filtered.snps.vcf"
+    output:
+        "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
     conda:
         "envs/calling.yaml"
     shell:
-        "bcftools query -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\n' {input} -o {output}"
+        """
+        bcftools annotate -a {input.reference_bed} -c CHROM,FROM,TO,GENE \
+        -h <(echo '##INFO=<ID=GENE,Number=1,Type=String,Description="Gene name">') \
+        {input.vcf} > {output}
+        """
+
+rule select_columns:
+    input:
+        "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
+    output:
+        "results/{specie_id}/{sample}.filtered.snps.extract.tsv"
+    conda:
+        "envs/calling.yaml"
+    shell:
+        "bcftools query -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\t%INFO/GENE\n' {input} -o {output}"
 
 rule merge_samples:
     input:
-        expand("results/{sample}.filtered.snps.extract.tsv", sample=samples)
+        merge_samples_by_specie
     output:
-        "results/snps_table.csv"
+        "results/{specie_id}/snps_table.csv"
     conda:
         "envs/merging.yaml"
     shell:
