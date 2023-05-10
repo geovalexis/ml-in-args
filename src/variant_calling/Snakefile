@@ -21,7 +21,7 @@ rule download_reference_genomes:
         "envs/ncbi.yaml"
     shell:
         """
-        bash workflow/scripts/download_reference_genome.sh {wildcards.specie_id} {output.fasta} {output.gff}
+        bash scripts/download_reference_genome.sh {wildcards.specie_id} {output.fasta} {output.gff}
         """
 
 rule index_reference_genome:
@@ -93,7 +93,7 @@ rule gff2bed:
         "reference_genomes/{specie_id}/{specie_id}.bed"
     shell:
         """
-        bash workflow/scripts/gff2bed.sh {input.gff} {output}
+        bash scripts/gff2bed.sh {input.gff} {output}
         """
 
 rule annotate_snps:
@@ -129,4 +129,4 @@ rule merge_samples:
     conda:
         "envs/merging.yaml"
     shell:
-        "python workflow/scripts/merge_samples.py {input} --output {output}"
+        "python scripts/merge_samples.py {input} --output {output}"
