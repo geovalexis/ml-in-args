@@ -1,5 +1,11 @@
 configfile: "../config.yaml"
-samples = [os.path.splitext(entry.name)[0] for entry in os.scandir(config["samples_dir"]) if entry.name.endswith(".fna")] # TODO: fix this
+
+species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
+samples_by_specie = {
+    specie.name: [os.path.splitext(sample.name)[0] for sample in os.scandir(specie) if sample.name.endswith(".fna")] 
+    for specie in species_paths
+}
+
 
 rule all:
     input:
@@ -16,10 +22,10 @@ rule download_databases:
 
 rule compute_args:
     input:
-        fasta=config["samples_dir"]+"/{sample}.fna",
+        fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna",
         databases_folder="databases/"
     output:
-        temp(directory("results/args/{sample}"))
+        temp(directory("results/args/{specie_id}/{sample}"))
     conda:
         "envs/resfinder.yaml"
     shell:
@@ -30,9 +36,9 @@ rule compute_args:
         """
 rule parse_results:
     input:
-        results_dir="results/args/{sample}"
+        results_dir="results/args/{specie_id}/{sample}"
     output:
-       temp( "results/args_parsed/{sample}.json")
+       temp( "results/args_parsed/{specie_id}/{sample}.json")
     conda:
         "envs/parsing.yaml"
     shell:
@@ -44,7 +50,8 @@ rule parse_results:
 
 rule create_table:
     input:
-        expand("results/args_parsed/{sample}.json", sample=samples)
+        ["results/args_parsed/{specie_id}/{sample}.json".format(specie_id=specie_id, sample=sample)  
+        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
     output:
         "results/args_table.csv"
     conda:
