@@ -39,7 +39,7 @@ rule map_reads:
         ref="reference_genomes/{specie_id}/{specie_id}"+".fna.pac",
         fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna"
     output:
-        "results/mapped/{specie_id}/{sample}.bam"
+        temp("results/mapped/{specie_id}/{sample}.bam")
     conda:
         "envs/mapping.yaml"
     shell:
@@ -49,7 +49,7 @@ rule sort_alignments:
     input:
         "results/mapped/{specie_id}/{sample}.bam"
     output:
-        "results/mapped/{specie_id}/{sample}.sorted.bam"
+        temp("results/mapped/{specie_id}/{sample}.sorted.bam")
     conda:
         "envs/mapping.yaml"
     shell:
@@ -60,7 +60,7 @@ rule call_variants:
         ref="reference_genomes/{specie_id}/{specie_id}.fna",
         bam="results/mapped/{specie_id}/{sample}.sorted.bam"
     output:
-        "results/calls/{specie_id}/{sample}.vcf.gz"
+        temp("results/calls/{specie_id}/{sample}.vcf.gz")
     conda:
         "envs/calling.yaml"
     shell:
@@ -70,7 +70,7 @@ rule filter_variants:
     input:
         "results/calls/{specie_id}/{sample}.vcf.gz"
     output:
-        "results/filters/{specie_id}/{sample}.filtered.vcf"
+        temp("results/filters/{specie_id}/{sample}.filtered.vcf")
     conda:
         "envs/calling.yaml"
     shell:
@@ -80,7 +80,7 @@ rule keep_only_snps:
     input:
         "results/filters/{specie_id}/{sample}.filtered.vcf"
     output:
-        "results/filters/{specie_id}/{sample}.filtered.snps.vcf"
+        temp("results/filters/{specie_id}/{sample}.filtered.snps.vcf")
     conda:
         "envs/filtering.yaml"
     shell:
@@ -101,7 +101,7 @@ rule annotate_snps:
         reference_bed="reference_genomes/{specie_id}/{specie_id}.bed",
         vcf="results/filters/{specie_id}/{sample}.filtered.snps.vcf"
     output:
-        "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
+        temp("results/annotations/{specie_id}/{sample}.annotated.snps.vcf")
     conda:
         "envs/calling.yaml"
     shell:
@@ -115,7 +115,7 @@ rule select_columns:
     input:
         "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
     output:
-        "results/{specie_id}/{sample}.filtered.snps.extract.tsv"
+        temp("results/{specie_id}/{sample}.filtered.snps.extract.tsv")
     conda:
         "envs/calling.yaml"
     shell:
