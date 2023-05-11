@@ -8,8 +8,6 @@ import typer
 
 logger = logging.getLogger(__name__)
 
-column_names = ["CHROM", "POS", "REF", "ALT", "TGT", "GENE_NAME"]
-
 NO_VARIATON_TOKEN = "N"
 
 VARIANT_2_LABEL = {
@@ -22,13 +20,14 @@ VARIANT_2_LABEL = {
 
 
 def label_encode_snps(snps_table: pd.DataFrame):
-    return snps_table.fillna(NO_VARIATON_TOKEN)
+    return snps_table.fillna(NO_VARIATON_TOKEN).applymap(lambda x: VARIANT_2_LABEL[x])
 
 
 def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
+    snps_data["ID"] = snps_data["GENE_NAME"] + "/" + snps_data["GENE_POS"].astype(str)
     snps_pivot = (
-        snps_data[["POS", "ALT"]]
-        .set_index("POS") #TODO: Set index as GENE_NAME+POSITION_IN_GENE
+        snps_data[["ID", "ALT"]]
+        .set_index("ID")
         .rename(columns={"ALT": sample_name})
         .transpose()
     )
@@ -46,7 +45,7 @@ def main(
     snps_data_processed_all = []
     for res_file in results_files:
         sample_name = ".".join(os.path.basename(res_file).split(".")[:2])
-        snps_data = pd.read_csv(res_file, sep="\t", names=column_names)
+        snps_data = pd.read_csv(res_file, sep="\t", header=0)
         snps_data_processed = process_snps_file(snps_data, sample_name)
         snps_data_processed.reset_index(inplace=True)
         snps_data_processed_all.append(snps_data_processed)
@@ -57,8 +56,6 @@ def main(
     )
     snps_table.set_index("index", inplace=True)
     snps_table = label_encode_snps(snps_table)
-    # Enconde SNPs values
-    snps_table = snps_table.applymap(lambda x: VARIANT_2_LABEL[x])
     # Create dataframe
     logger.info(
         f"Creating dataframe with total of {len(snps_table.columns)} different SNPs..."

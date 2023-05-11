@@ -7,7 +7,7 @@ samples_by_specie = {
 }
 
 def merge_samples_by_specie(wildcards):
-    return expand("results/{{specie_id}}/{sample}.filtered.snps.extract.tsv", sample=samples_by_specie[wildcards.specie_id])
+    return expand("results/{{specie_id}}/{sample}.filtered.snps.extract.hydrated.tsv", sample=samples_by_specie[wildcards.specie_id])
 
 rule all:
     input:
@@ -121,12 +121,25 @@ rule select_columns:
     shell:
         "bcftools query -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\t%INFO/GENE\n' {input} -o {output}"
 
+rule derive_snp_position:
+    input:
+        ref="reference_genomes/{specie_id}/{specie_id}.bed",
+        snps="results/{specie_id}/{sample}.filtered.snps.extract.tsv"
+    output:
+        temp("results/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv")
+    conda:
+        "envs/merging.yaml"
+    shell:
+        "python scripts/derive_snp_position.py --ref {input.ref} --snps {input.snps} --output {output}"
+
 rule merge_samples:
     input:
-        merge_samples_by_specie
+        merge_samples_by_specie #TODO: merge all samples independently of specie (like args-calling)
     output:
         "results/{specie_id}/snps_table.csv"
     conda:
         "envs/merging.yaml"
     shell:
         "python scripts/merge_samples.py {input} --output {output}"
+
+#TODO: checkout why there are no snps for the salmonella samples
