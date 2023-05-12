@@ -15,8 +15,8 @@ unzip reference_genomes/$taxon_id.zip -d reference_genomes/ncbi_$taxon_id
 
 # Move files to outputs path
 echo "Moving files to outputs path..."
-current_genome_path=$(cat reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/dataset_catalog.json | jq -r '.assemblies[].files[] | select(.fileType == "GENOMIC_NUCLEOTIDE_FASTA") | .filePath')
-current_gff3_path=$(cat reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/dataset_catalog.json | jq -r '.assemblies[].files[] | select(.fileType == "GFF3") | .filePath')
+current_genome_path=$(cat reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/dataset_catalog.json | jq -r '.assemblies[].files[] | select(.fileType == "GENOMIC_NUCLEOTIDE_FASTA") | .filePath' | head -n 1)
+current_gff3_path=$(cat reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/dataset_catalog.json | jq -r '.assemblies[].files[] | select(.fileType == "GFF3") | .filePath' | head -n 1)
 mv reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/$current_genome_path $output_genome_path
 mv reference_genomes/ncbi_$taxon_id/ncbi_dataset/data/$current_gff3_path $output_gff3_path
 

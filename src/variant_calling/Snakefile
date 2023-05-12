@@ -6,12 +6,9 @@ samples_by_specie = {
     for specie in species_paths
 }
 
-def merge_samples_by_specie(wildcards):
-    return expand("results/{{specie_id}}/{sample}.filtered.snps.extract.hydrated.tsv", sample=samples_by_specie[wildcards.specie_id])
-
 rule all:
     input:
-        expand("results/{specie_id}/snps_table.csv", specie_id=samples_by_specie.keys())
+        "results/snps_table.csv"
 
 rule download_reference_genomes:
     output:
@@ -134,9 +131,10 @@ rule derive_snp_position:
 
 rule merge_samples:
     input:
-        merge_samples_by_specie #TODO: merge all samples independently of specie (like args-calling)
+        ["results/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv".format(specie_id=specie_id, sample=sample)  
+        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
     output:
-        "results/{specie_id}/snps_table.csv"
+        "results/snps_table.csv"
     conda:
         "envs/merging.yaml"
     shell:
