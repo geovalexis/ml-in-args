@@ -24,9 +24,16 @@ def label_encode_snps(snps_table: pd.DataFrame):
 
 
 def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
-    snps_data["ID"] = snps_data["GENE_NAME"] + "/" + snps_data["GENE_POS"].astype(str)
+    snps_data_cleaned = snps_data[
+        snps_data["GENE_NAME"] != "."
+    ].copy()  # NOTE: ignore those without GENE_NAME
+    snps_data_cleaned["ID"] = (
+        snps_data["GENE_NAME"]
+        + "/"
+        + snps_data_cleaned["GENE_POS"].astype("int").astype("str")
+    )
     snps_pivot = (
-        snps_data[["ID", "ALT"]]
+        snps_data_cleaned[["ID", "ALT"]]
         .set_index("ID")
         .rename(columns={"ALT": sample_name})
         .transpose()
@@ -36,7 +43,7 @@ def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
 
 def main(
     results_files: List[str] = typer.Argument(
-        ..., help="List of path to the parsed results from ResFinder"
+        ..., help="List of path to the variant calling results"
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):

@@ -8,7 +8,7 @@ samples_by_specie = {
 
 rule all:
     input:
-        "results/snps_table.csv"
+        "results/snps_data.csv"
 
 rule download_reference_genomes:
     output:
@@ -67,7 +67,7 @@ rule filter_variants:
     input:
         "results/calls/{specie_id}/{sample}.vcf.gz"
     output:
-        temp("results/filters/{specie_id}/{sample}.filtered.vcf")
+        "results/filters/{specie_id}/{sample}.filtered.vcf"
     conda:
         "envs/calling.yaml"
     shell:
@@ -98,7 +98,7 @@ rule annotate_snps:
         reference_bed="reference_genomes/{specie_id}/{specie_id}.bed",
         vcf="results/filters/{specie_id}/{sample}.filtered.snps.vcf"
     output:
-        temp("results/annotations/{specie_id}/{sample}.annotated.snps.vcf")
+        "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
     conda:
         "envs/calling.yaml"
     shell:
@@ -112,7 +112,7 @@ rule select_columns:
     input:
         "results/annotations/{specie_id}/{sample}.annotated.snps.vcf"
     output:
-        temp("results/{specie_id}/{sample}.filtered.snps.extract.tsv")
+        temp("results/selected/{specie_id}/{sample}.filtered.snps.extract.tsv")
     conda:
         "envs/calling.yaml"
     shell:
@@ -121,23 +121,21 @@ rule select_columns:
 rule derive_snp_position:
     input:
         ref="reference_genomes/{specie_id}/{specie_id}.bed",
-        snps="results/{specie_id}/{sample}.filtered.snps.extract.tsv"
+        snps="results/selected/{specie_id}/{sample}.filtered.snps.extract.tsv"
     output:
-        temp("results/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv")
+        "results/hydrated/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv"
     conda:
         "envs/merging.yaml"
     shell:
         "python scripts/derive_snp_position.py --ref {input.ref} --snps {input.snps} --output {output}"
 
-rule merge_samples:
+rule concat_samples:
     input:
-        ["results/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv".format(specie_id=specie_id, sample=sample)  
+        ["results/hydrated/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv".format(specie_id=specie_id, sample=sample)  
         for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
     output:
-        "results/snps_table.csv"
+        "results/snps_data.csv"
     conda:
         "envs/merging.yaml"
     shell:
-        "python scripts/merge_samples.py {input} --output {output}"
-
-#TODO: checkout why there are no snps for the salmonella samples
+        "python scripts/concat_samples.py {input} --output {output}"
