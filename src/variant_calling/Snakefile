@@ -6,9 +6,13 @@ samples_by_specie = {
     for specie in species_paths
 }
 
+final_output = "results/snps_data.tsv"
+
 rule all:
     input:
-        "results/snps_data.csv"
+        ["results/processed/{specie_id}/{sample}".format(specie_id=specie_id, sample=sample)  
+        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
+
 
 rule download_reference_genomes:
     output:
@@ -131,11 +135,12 @@ rule derive_snp_position:
 
 rule concat_samples:
     input:
-        ["results/hydrated/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv".format(specie_id=specie_id, sample=sample)  
-        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
+        "results/hydrated/{specie_id}/{sample}.filtered.snps.extract.hydrated.tsv"
     output:
-        "results/snps_data.csv"
-    conda:
-        "envs/merging.yaml"
+        "results/processed/{specie_id}/{sample}"
     shell:
-        "python scripts/concat_samples.py {input} --output {output}"
+        """
+        awk -v taxid="{wildcards.specie_id}" -v sample_name="{wildcards.sample}" -F'\t' -v OFS='\t' '{{ print $0, taxid, sample_name }}' "{input}" \
+        | tail -n +2 >> {final_output}
+        touch {output}
+        """
