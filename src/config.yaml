@@ -2,5 +2,3 @@ bv-brc_query: "eq(genome_id%2C*)%26genome(eq(taxon_lineage_ids%2C2))%26and(eq(ta
 samples_dir: "../../data/samples"
 tmp_dir: "../../data/tmp"
 biosamples_accessions: "../../data/aac.00483-19-s0001.csv"
-specie: "Enterococcus faecalis"
-reference_genome: "../../data/reference_genome/GCA_000393015.1_Ente_faec_T5_V1_genomic.fna"

@@ -1,0 +1,7 @@
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - ncbi-datasets-cli==14.27.0
+  - entrez-direct==16.2

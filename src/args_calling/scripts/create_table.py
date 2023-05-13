@@ -1,13 +1,5 @@
-# TODO: take all json files with the parsed results and create a dataframe in which:
-# - each row is the sample name
-# - each column is a gene and the value if whether the gene is present or not
-#
-# Before creating the dataframe, we need to extract all the possible genes from all the json files.
-
-
 import json
 import logging
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List

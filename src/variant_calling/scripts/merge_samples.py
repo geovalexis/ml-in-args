@@ -8,8 +8,6 @@ import typer
 
 logger = logging.getLogger(__name__)
 
-column_names = ["CHROM", "POS", "REF", "ALT", "TGT"]
-
 NO_VARIATON_TOKEN = "N"
 
 VARIANT_2_LABEL = {
@@ -22,13 +20,21 @@ VARIANT_2_LABEL = {
 
 
 def label_encode_snps(snps_table: pd.DataFrame):
-    return snps_table.fillna(NO_VARIATON_TOKEN)
+    return snps_table.fillna(NO_VARIATON_TOKEN).applymap(lambda x: VARIANT_2_LABEL[x])
 
 
 def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
+    snps_data_cleaned = snps_data[
+        snps_data["GENE_NAME"] != "."
+    ].copy()  # NOTE: ignore those without GENE_NAME
+    snps_data_cleaned["ID"] = (
+        snps_data["GENE_NAME"]
+        + "/"
+        + snps_data_cleaned["GENE_POS"].astype("int").astype("str")
+    )
     snps_pivot = (
-        snps_data[["POS", "ALT"]]
-        .set_index("POS")
+        snps_data_cleaned[["ID", "ALT"]]
+        .set_index("ID")
         .rename(columns={"ALT": sample_name})
         .transpose()
     )
@@ -37,7 +43,7 @@ def process_snps_file(snps_data: pd.DataFrame, sample_name: str):
 
 def main(
     results_files: List[str] = typer.Argument(
-        ..., help="List of path to the parsed results from ResFinder"
+        ..., help="List of path to the variant calling results"
     ),
     output: str = typer.Option(..., help="Filename of the final CSV file"),
 ):
@@ -46,7 +52,7 @@ def main(
     snps_data_processed_all = []
     for res_file in results_files:
         sample_name = ".".join(os.path.basename(res_file).split(".")[:2])
-        snps_data = pd.read_csv(res_file, sep="\t", names=column_names)
+        snps_data = pd.read_csv(res_file, sep="\t", header=0)
         snps_data_processed = process_snps_file(snps_data, sample_name)
         snps_data_processed.reset_index(inplace=True)
         snps_data_processed_all.append(snps_data_processed)
@@ -57,8 +63,6 @@ def main(
     )
     snps_table.set_index("index", inplace=True)
     snps_table = label_encode_snps(snps_table)
-    # Enconde SNPs values
-    snps_table = snps_table.applymap(lambda x: VARIANT_2_LABEL[x])
     # Create dataframe
     logger.info(
         f"Creating dataframe with total of {len(snps_table.columns)} different SNPs..."

@@ -9,7 +9,7 @@ rule download_metadata:
     output:
         "results/BVBRC_genome_amr.csv"
     shell:
-        "sh workflow/scripts/download_metadata.sh '{config[bv-brc_query]}' {output}"
+        "sh scripts/download_metadata.sh '{config[bv-brc_query]}' {output}"
 
 rule download_samples:
     input:
@@ -17,7 +17,7 @@ rule download_samples:
     output:
         directory(config["samples_dir"])
     shell:
-        "sh workflow/scripts/download_samples.sh {input} {output}"
+        "sh scripts/download_samples.sh {input} {output}"
 
 rule get_amr_labels:
     input:
@@ -27,4 +27,4 @@ rule get_amr_labels:
     conda:
         "envs/parsing.yaml"
     shell:
-        "python workflow/scripts/get_amr_labels.py --bvbrc-file {input} --output {output}"
+        "python scripts/get_amr_labels.py --bvbrc-file {input} --output {output}"
