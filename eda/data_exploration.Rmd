@@ -8,10 +8,11 @@ output:
     number_sections: yes
     toc: yes
     toc_depth: 3
+    df_print: tibble
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, rows.print = 25)
 
 is_render_mode <- !is.null(knitr::current_input())
 view_method <- if (is_render_mode) "render" else "viewer"
@@ -27,14 +28,20 @@ library(tidyverse)
 
 ```{r}
 # ARGs (Antibiotic Resistance Genes)
-args_data <- read_csv("src/args_calling/results/args_table.csv", col_types = cols("sample_name" = col_character()))
-head(args_data)
+args_data <- read_csv("data/results/args_calling/args_table.csv", col_types = cols("sample_name" = col_character()))
+args_data
+```
+
+```{r}
 # SNPs (Single Nucleotide Polymorphisms)
-snps_data <- read_csv("src/variant_calling/results/snps_table.csv", col_types = cols("sample_name" = col_character()))
-head(snps_data)
+snps_data <- read_tsv("data/results/variant_calling/snps_data.tsv", col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
+snps_data
+```
+
+```{r}
 # AMR (Antimicrobial Resistance) labels
-amr_labels <- read_csv("src/data_retrieval/results/amr_labels.csv", col_types = cols("Genome ID" = col_character()))
-head(amr_labels)
+amr_labels <- read_csv("data/results/data_collection_ncbi/amr_labels.csv", col_types = cols("SampleID" = col_character()))
+amr_labels
 ```
 
 # Explore data
@@ -42,13 +49,13 @@ head(amr_labels)
 ## ARGs
 
 ```{r}
-#TODO: plot number of resistance genes per antibiotic
+# TODO: plot number of resistance genes per antibiotic
 ```
 
 ## SNPs
 
 ```{r}
-#TODO
+# TODO
 ```
 
 ## AMR labels
@@ -57,7 +64,8 @@ Count how many samples are resistance to each antibiotic:
 
 ```{r}
 amr_labels %>%
-  select(-`Genome ID`) %>%
+  select(-`SampleID`) %>%
+  replace(is.na(.), 0) %>% # NOTE: if no result for a certain antibiotic, it is considered as not resistant
   summarise_all(~ sum(.x == 1)) %>%
   gather(key = "antibiotic", value = "resistant samples") %>%
   arrange(desc(`resistant samples`))
