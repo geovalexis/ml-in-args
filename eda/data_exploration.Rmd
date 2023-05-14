@@ -12,10 +12,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, rows.print = 25)
-
-is_render_mode <- !is.null(knitr::current_input())
-view_method <- if (is_render_mode) "render" else "viewer"
+knitr::opts_chunk$set(echo = TRUE, rows.print = 25, fig.path = "figures/")
 ```
 
 # Import libraries
@@ -24,7 +21,7 @@ view_method <- if (is_render_mode) "render" else "viewer"
 library(tidyverse)
 ```
 
-# Read raw data
+# Import data
 
 ```{r}
 # ARGs (Antibiotic Resistance Genes)
@@ -85,6 +82,8 @@ args_data <- args_data %>%
 
 # Clean and prepare data
 
+First of all, we will need to clean and prepare the data in order to perform the analysis.
+
 ## ARGs
 
 This table has the following structure:
@@ -121,7 +120,8 @@ args_data %>%
 # Mean number of resistance genes per sample
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
-  summarise(mean(count))
+  summarise(mean(count)) %>%
+  pull()
 # Boxplot summarizing above information
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
@@ -134,6 +134,8 @@ args_data %>%
 \#TODO: add analysis when final data is ready
 
 ## SNPs
+
+### Preparation
 
 In this case, we will need to perform preparation steps for each sample, since the table has a different structure.
 
@@ -198,7 +200,7 @@ snps_data_wide <- snps_data %>%
   select(sample_name, gene_name, gene_pos, alt) %>%
   pivot_wider(names_from = c("gene_pos"), values_from = alt, values_fill = "NO-SNP") %>%
   pivot_longer(cols = -c(sample_name, gene_name), names_to = "gene_pos", values_to = "alt") %>%
-  pivot_wider(names_from = c("gene_name", "gene_pos"), values_from = alt, values_fill = "NULL") %>%
+  pivot_wider(names_from = c("gene_name", "gene_pos"), values_from = alt, values_fill = "NULL", names_sep = "/") %>%
   ungroup()
 ```
 
@@ -217,29 +219,142 @@ snp_2_num <- c(
 
 ```{r}
 # Mutate all except sample_name
-snps_data_wide %>%
-  mutate(across(-c(sample_name), ~as.numeric(snp_2_num[.x])))
+snps_data_wide <- snps_data_wide %>%
+  mutate(across(-c(sample_name), ~ as.numeric(snp_2_num[.x])))
 ```
+
+### Null values detection
+
+\#TODO
+
+### Outliers analysis
+
+\#TODO
 
 ## AMR labels
 
+The structure of this table is as follows:
+
+SampleID | Antibiotic1 | Antibiotic2 | Antibiotic3 | ...
+SAMN04256112 | 0 | 1 | 0 | ...
+
+Where each column represents an antibiotic and each row represents a sample. The values of each cell can be:
+
+* 0: the sample is not resistant to the antibiotic
+* 1: the sample is resistant to the antibiotic
+
+One sample can be resistant to multiple antibiotics, so we can have multiple 1s in the same row.
+
+### Preparation
+
+Adapt data so it has the same sampleIds as ARGS and variant calling data. AMR labes happens to have
+the biosamples accession numbers as sampleIds, so we will need to map them to their corresponding assembly
+accession ids.
+
+```{r}
+# Given information in samples_metadata, replace biosample_accession with assembly_accession
+amr_labels <- amr_labels %>%
+  left_join(distinct(samples_metadata, biosample_accession, .keep_all = TRUE), by = c("SampleID" = "biosample_accession")) %>%
+  select(-c(`SampleID`, tax_id)) %>%
+  rename(`SampleID` = assembly_accession) %>%
+  select(SampleID, everything())
+```
+
+### Cleaning
+
+```{r}
+MAX_NULLS_PER_ANTIBIOTIC <- 30
+```
+
+We will remove those antibiotics with more than `r MAX_NULLS_PER_ANTIBIOTIC`% of null values.
+
+```{r}
+# Count null values per antibiotic (each column) in percentage
+nulls_per_antibiotic <- amr_labels %>%
+  select(-`SampleID`) %>%
+  summarise_all(~ sum(is.na(.x)) / nrow(amr_labels) * 100) %>%
+  gather(key = "antibiotic", value = "% of null values") %>%
+  arrange(desc(`% of null values`))
+knitr::kable(nulls_per_antibiotic)
+```
+
+```{r}
+# Remove antibiotics with more than 30% of null values
+antibiotics_to_remove <- nulls_per_antibiotic %>%
+  filter(`% of null values` > 30) %>%
+  pull(antibiotic)
+amr_labels <- amr_labels %>%
+  select(-all_of(antibiotics_to_remove))
+```
+
+### Exploration
+
 Count how many samples are resistance to each antibiotic:
 
-```{r}
-amr_labels %>%
+```{r, display = 'inline-block'}
+resistant_samples_per_antibiotic <- amr_labels %>%
   select(-`SampleID`) %>%
-  replace(is.na(.), 0) %>% # NOTE: if no result for a certain antibiotic, it is considered as not resistant
-  summarise_all(~ sum(.x == 1)) %>%
+  summarise_all(~ sum(.x == 1, na.rm = TRUE)) %>%
   gather(key = "antibiotic", value = "resistant samples") %>%
   arrange(desc(`resistant samples`))
-```
-
-## Explore data
-
-```{r}
-# TODO: histogram with mean number of resistance genes per antibiotic
+knitr::kable(resistant_samples_per_antibiotic)
 ```
 
 ```{r}
-# TODO: histogram with mean number of SNPs per antibiotic
+# Bar plot with number of resistant samples per antibiotic
+resistant_samples_per_antibiotic %>%
+  ggplot(aes(x = antibiotic, y = `resistant samples`)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(x = "Antibiotic", y = "Number of resistant samples")
+```
+
+# Explore data
+
+Median number of resistant genes per antibiotic:
+
+```{r}
+# Boxplot with mean number of resistant genes per antibiotic
+args_data %>%
+  mutate(n_args = rowSums(select(., -sample_name))) %>%
+  select(sample_name, n_args) %>%
+  left_join(amr_labels, by = c("sample_name" = "SampleID")) %>%
+  pivot_longer(cols = -c(sample_name, n_args), names_to = "antibiotic", values_to = "resistant") %>%
+  filter(resistant == 1) %>%
+  ggplot(aes(x = antibiotic, y = n_args, color = antibiotic)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of resistant genes")
+```
+
+Median number of SNPs per antibiotic:
+
+```{r}
+# Boxplot with mean number of SNPs per antibiotic
+# In this, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
+snps_data %>%
+  ungroup() %>%
+  select(sample_name) %>%
+  group_by(sample_name) %>%
+  summarise(n_snps = n()) %>%
+  left_join(amr_labels, by = c("sample_name" = "SampleID")) %>%
+  pivot_longer(cols = -c(sample_name, n_snps), names_to = "antibiotic", values_to = "resistant") %>%
+  filter(resistant == 1) %>%
+  ggplot(aes(x = antibiotic, y = n_snps, color = antibiotic)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of SNPs")
+```
+
+# Save data
+
+```{r}
+snps_data_wide %>%
+  write_tsv("data/results/variant_calling/snps_data_cleaned.tsv")
+
+args_data %>%
+  write_tsv("data/results/args_calling/args_data_cleaned.tsv")
+
+amr_labels %>%
+  write_tsv("data/results/data_collection_ncbi/amr_labels_cleaned.tsv")
 ```
