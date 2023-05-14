@@ -9,7 +9,7 @@ rule get_assembly_accession_ids:
     input:
         config["biosamples_accessions"]
     output:
-        config["tmp_dir"]+"/assembly_accession_ids+tax_ids.txt"
+        "results/assembly_accession_ids+tax_ids.txt"
     conda:
         "envs/ncbi.yaml"
     shell:
@@ -43,12 +43,12 @@ rule get_amr_labels:
 
 rule remove_tax_ids_column: # NOTE: step not tested together with the rest of the pipeline
     input:
-        config["tmp_dir"]+"/assembly_accession_ids+tax_ids.txt"
+        "results/assembly_accession_ids+tax_ids.txt"
     output:
         config["tmp_dir"]+"/assembly_accession_ids.txt"
     shell:
         """
-        cut -f1 '{input}' > '{output}'
+        cut -f2 '{input}' > '{output}'
         """
 
 rule download_assemblies:
@@ -83,7 +83,7 @@ rule move_fasta_files:
 rule classify_samples_by_specie: # NOTE: step not tested together with the rest of the pipeline
     input:
         artifact=config["samples_dir"]+"/.moved_completed",
-        acc_2_taxid=config["tmp_dir"]+"/assembly_accession_ids+tax_ids.txt"
+        acc_2_taxid="results/assembly_accession_ids+tax_ids.txt"
     output:
         directory(config["samples_dir"])+"/.classified_completed"
     shell:
