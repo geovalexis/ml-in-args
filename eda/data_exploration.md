@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 14, 2023
+May 15, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -268,8 +268,10 @@ perform the analysis.
 
 This table has the following structure:
 
-sample_name \| GeneA \| GeneB \| GeneC \| … GCA_012637185.1 \| 0 \| 1 \|
-0 \| … … \| … \| … \| … \| …
+| sample_name     | GeneA | GeneB | GeneC |   … |
+|:----------------|:------|:------|:------|----:|
+| GCA_012637185.1 | 0     | 1     | 0     |   … |
+| …               | …     | …     | …     |   … |
 
 For each gene, a boolean value is given dependending on whether the gene
 is resistance or not.
@@ -360,12 +362,12 @@ args_data %>%
 In this case, we will need to perform preparation steps for each sample,
 since the table has a different structure.
 
-chrom \| pos \| ref \| alt \| tgt \| gene_name \| gene_pos \| tax_id \|
-sample_name NC_002695.2 \| 1250767 \| T \| C \| T/C \| ECs_1169 \| 511.0
-\| 562 \| GCA_012688215.1 NC_002695.2 \| 1250712 \| C \| A \| C/A \|
-ECs_1169 \| 456.0 \| 562 \| GCA_012688215.1 NZ_CP046317.1 \| 218754 \| T
-\| G \| T/G \| FOC43_RS01045 \| 603 \| 195 \| GCA_005283725.1 … \| … \|
-… \| … \| … \| … \| … \| … \| …
+| chrom         | pos     | ref | alt | tgt | gene_name     | gene_pos | tax_id |     sample_name |
+|:--------------|:--------|:----|:----|:----|:--------------|:---------|:-------|----------------:|
+| NC_002695.2   | 1250767 | T   | C   | T/C | ECs_1169      | 511.0    | 562    | GCA_012688215.1 |
+| NC_002695.2   | 1250712 | C   | A   | C/A | ECs_1169      | 456.0    | 562    | GCA_012688215.1 |
+| NZ_CP046317.1 | 218754  | T   | G   | T/G | FOC43_RS01045 | 603      | 195    | GCA_005283725.1 |
+| …             | …       | …   | …   | …   | …             | …        | …      |               … |
 
 Here is a brief description of each column:
 
@@ -394,9 +396,11 @@ gene_name2/gene2_pos1 \| …
 
 For the previous example, the table would look like this:
 
-sample_name \| ECs_1169/456 \| ECs_1169/1250712 \| FOC43_RS01045/603 \|
-… GCA_012688215.1 \| C \| NO-SNP \| NULL \| … GCA_012637185.1 \| NO-SNP
-\| A \| NULL \| … GCA_005283725.1 \| NULL \| NULL \| G \| …
+| sample_name     | ECs_1169/456 | ECs_1169/1250712 | FOC43_RS01045/603 |   … |
+|:----------------|:-------------|:-----------------|:------------------|----:|
+| GCA_012688215.1 | C            | NO-SNP           | NULL              |   … |
+| GCA_012637185.1 | NO-SNP       | A                | NULL              |   … |
+| GCA_005283725.1 | NULL         | NULL             | G                 |   … |
 
 As we can see, each SNP is represented as a column, and each row
 represents a sample. For each SNP, we can have the following values:
