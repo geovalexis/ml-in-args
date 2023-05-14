@@ -22,6 +22,7 @@ Using genetic information from resistant bacteria, it is possible to model the c
 
 * Variant calling:
     * Take secondary mutations into account
+    * Encode TGT instead of only alternative allele as it provides more information (from what nucleotides the mutation comes from)
     * Use one-hot-encoded instead of label encoding
 * General workflow:
     * Use [data-dependant conditional execution](https://snakemake.readthedocs.io/en/stable/snakefiles/rules.html#data-dependent-conditional-execution) to run all workflows instead of custom `run_workflow.py` script
