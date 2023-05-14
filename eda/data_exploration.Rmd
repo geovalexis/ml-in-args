@@ -238,8 +238,10 @@ snps_data_wide <- snps_data_wide %>%
 
 The structure of this table is as follows:
 
-SampleID | Antibiotic1 | Antibiotic2 | Antibiotic3 | ...
-SAMN04256112 | 0 | 1 | 0 | ...
+| SampleID | Antibiotic1 | Antibiotic2 | Antibiotic3 | ... |
+|:---------|-------------|-------------|-------------|----:|
+| SAMN04256112 | 0 | 1 | 0 | ... |
+| ... | ... | ... | ... | ... |
 
 Where each column represents an antibiotic and each row represents a sample. The values of each cell can be:
 
