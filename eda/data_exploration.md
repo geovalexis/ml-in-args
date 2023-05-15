@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 15, 2023
+May 16, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -66,8 +66,13 @@ library(tidyverse)
 # 2 Import data
 
 ``` r
+batch_number <- "_batch1"
+```
+
+``` r
 # ARGs (Antibiotic Resistance Genes)
-args_data <- read_csv("data/results/args_calling/args_table.csv", col_types = cols("sample_name" = col_character()))
+args_data_filepath <- paste0("data/results/args_calling/args_table", batch_number, ".csv")
+args_data <- read_csv(args_data_filepath, col_types = cols("sample_name" = col_character()))
 ## Fix/extract name of samples
 args_data <- args_data %>%
   mutate(sample_name = str_extract(sample_name, "^\\w+.\\d+"))
@@ -97,7 +102,8 @@ args_data
 
 ``` r
 # SNPs (Single Nucleotide Polymorphisms)
-snps_data <- read_tsv("data/results/variant_calling/snps_data.tsv", col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
+snps_data_filepath <- paste0("data/results/variant_calling/snps_data", batch_number, ".tsv")
+snps_data <- read_tsv(snps_data_filepath, col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
 ```
 
     ## Warning: One or more parsing issues, call `problems()` on your data frame for details,
@@ -351,7 +357,7 @@ args_data %>%
   theme_bw()
 ```
 
-![](figures/unnamed-chunk-9-1.png)<!-- -->
+![](figures/unnamed-chunk-10-1.png)<!-- -->
 
 \#TODO: add analysis when final data is ready
 
@@ -460,18 +466,87 @@ snps_data_wide <- snps_data_wide %>%
 
 ### 3.2.2 Null values detection
 
-\#TODO
+``` r
+# Count number of nulls per sample in percentage
+snps_data_wide %>%
+  mutate(nulls = rowSums(select(., -sample_name) == -1) / ncol(select(., -sample_name)) * 100) %>%
+  select(sample_name, nulls) %>%
+  arrange(desc(nulls))
+```
+
+    ## # A tibble: 35 x 2
+    ##    sample_name     nulls
+    ##    <chr>           <dbl>
+    ##  1 GCA_005287105.1    95
+    ##  2 GCA_005284005.1    95
+    ##  3 GCA_012708885.1    95
+    ##  4 GCA_012642705.1    95
+    ##  5 GCA_012749135.1    95
+    ##  6 GCA_012714385.1    95
+    ##  7 GCA_012714465.1    95
+    ##  8 GCA_012687445.1    95
+    ##  9 GCA_012708785.1    95
+    ## 10 GCA_004227885.1    95
+    ## # ... with 25 more rows
+
+For most of the samples, there is very little coocurrences in terms of
+SNPs.
 
 ### 3.2.3 Outliers analysis
 
-\#TODO
+``` r
+# For each sample, how many SNPs are present?
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  select(sample_name, count) %>%
+  arrange(desc(count))
+```
+
+    ## # A tibble: 35 x 2
+    ##    sample_name     count
+    ##    <chr>           <dbl>
+    ##  1 GCA_012688215.1    12
+    ##  2 GCA_012677385.1     9
+    ##  3 GCA_012642525.1     9
+    ##  4 GCA_012688045.1     8
+    ##  5 GCA_005286905.1     7
+    ##  6 GCA_012704445.1     6
+    ##  7 GCA_012686285.1     6
+    ##  8 GCA_012708785.1     5
+    ##  9 GCA_012708885.1     4
+    ## 10 GCA_012735855.1     4
+    ## # ... with 25 more rows
+
+``` r
+# Mean number of SNPs per sample
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  summarise(mean(count)) %>%
+  pull()
+```
+
+    ## [1] 3.342857
+
+``` r
+# Boxplot summarizing above information
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  theme_bw()
+```
+
+![](figures/unnamed-chunk-18-1.png)<!-- -->
 
 ## 3.3 AMR labels
 
 The structure of this table is as follows:
 
-SampleID \| Antibiotic1 \| Antibiotic2 \| Antibiotic3 \| … SAMN04256112
-\| 0 \| 1 \| 0 \| …
+| SampleID     | Antibiotic1 | Antibiotic2 | Antibiotic3 |   … |
+|:-------------|:------------|:------------|:------------|----:|
+| SAMN04256112 | 0           | 1           | 0           |   … |
+| …            | …           | …           | …           |   … |
 
 Where each column represents an antibiotic and each row represents a
 sample. The values of each cell can be:
@@ -588,7 +663,7 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-19-1.png)<!-- -->
+![](figures/unnamed-chunk-24-1.png)<!-- -->
 
 # 4 Explore data
 
@@ -608,7 +683,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-20-1.png)<!-- -->
+![](figures/unnamed-chunk-25-1.png)<!-- -->
 
 Median number of SNPs per antibiotic:
 
@@ -629,17 +704,20 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
-![](figures/unnamed-chunk-21-1.png)<!-- -->
+![](figures/unnamed-chunk-26-1.png)<!-- -->
 
 # 5 Save data
 
 ``` r
+snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
 snps_data_wide %>%
-  write_tsv("data/results/variant_calling/snps_data_cleaned.tsv")
+  write_tsv(snps_data_output_path)
 
+args_data_output_path <- paste0("data/results/args_calling/args_data", batch_number, "_cleaned.tsv")
 args_data %>%
-  write_tsv("data/results/args_calling/args_data_cleaned.tsv")
+  write_tsv(args_data_output_path)
 
+amr_labels_output_path <- paste0("data/results/data_collection_ncbi/amr_labels", batch_number, "_cleaned.tsv")
 amr_labels %>%
-  write_tsv("data/results/data_collection_ncbi/amr_labels_cleaned.tsv")
+  write_tsv(amr_labels_output_path)
 ```

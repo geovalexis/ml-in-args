@@ -24,8 +24,13 @@ library(tidyverse)
 # Import data
 
 ```{r}
+batch_number <- "_batch1"
+```
+
+```{r}
 # ARGs (Antibiotic Resistance Genes)
-args_data <- read_csv("data/results/args_calling/args_table.csv", col_types = cols("sample_name" = col_character()))
+args_data_filepath <- paste0("data/results/args_calling/args_table", batch_number, ".csv")
+args_data <- read_csv(args_data_filepath, col_types = cols("sample_name" = col_character()))
 ## Fix/extract name of samples
 args_data <- args_data %>%
   mutate(sample_name = str_extract(sample_name, "^\\w+.\\d+"))
@@ -34,7 +39,8 @@ args_data
 
 ```{r}
 # SNPs (Single Nucleotide Polymorphisms)
-snps_data <- read_tsv("data/results/variant_calling/snps_data.tsv", col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
+snps_data_filepath <- paste0("data/results/variant_calling/snps_data", batch_number, ".tsv")
+snps_data <- read_tsv(snps_data_filepath, col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
 # Fix/extract name of samples
 snps_data <- snps_data %>%
   mutate(sample_name = str_extract(sample_name, "^\\w+.\\d+"))
@@ -228,11 +234,43 @@ snps_data_wide <- snps_data_wide %>%
 
 ### Null values detection
 
-\#TODO
+```{r}
+# Count number of nulls per sample in percentage
+snps_data_wide %>%
+  mutate(nulls = rowSums(select(., -sample_name) == -1) / ncol(select(., -sample_name)) * 100) %>%
+  select(sample_name, nulls) %>%
+  arrange(desc(nulls))
+```
+
+For most of the samples, there is very little coocurrences in terms of SNPs. 
 
 ### Outliers analysis
 
-\#TODO
+```{r}
+# For each sample, how many SNPs are present?
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  select(sample_name, count) %>%
+  arrange(desc(count))
+```
+
+```{r}
+# Mean number of SNPs per sample
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  summarise(mean(count)) %>%
+  pull()
+```
+
+```{r}
+# Boxplot summarizing above information
+snps_data_wide %>%
+  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  theme_bw()
+```
 
 ## AMR labels
 
@@ -354,12 +392,15 @@ snps_data %>%
 # Save data
 
 ```{r}
+snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
 snps_data_wide %>%
-  write_tsv("data/results/variant_calling/snps_data_cleaned.tsv")
+  write_tsv(snps_data_output_path)
 
+args_data_output_path <- paste0("data/results/args_calling/args_data", batch_number, "_cleaned.tsv")
 args_data %>%
-  write_tsv("data/results/args_calling/args_data_cleaned.tsv")
+  write_tsv(args_data_output_path)
 
+amr_labels_output_path <- paste0("data/results/data_collection_ncbi/amr_labels", batch_number, "_cleaned.tsv")
 amr_labels %>%
-  write_tsv("data/results/data_collection_ncbi/amr_labels_cleaned.tsv")
+  write_tsv(amr_labels_output_path)
 ```
