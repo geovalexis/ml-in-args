@@ -24,7 +24,7 @@ library(tidyverse)
 # Import data
 
 ```{r}
-batch_number <- "_batch1"
+batch_number <- "_batch2"
 ```
 
 ```{r}

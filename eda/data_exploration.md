@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 16, 2023
+May 17, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -66,7 +66,7 @@ library(tidyverse)
 # 2 Import data
 
 ``` r
-batch_number <- "_batch1"
+batch_number <- "_batch2"
 ```
 
 ``` r
@@ -79,7 +79,7 @@ args_data <- args_data %>%
 args_data
 ```
 
-    ## # A tibble: 444 x 66
+    ## # A tibble: 1,036 x 88
     ##    sample_name    NarA  NarB aac(3~1 aac(3~2 aac(6~3 aac(6~4 aadA1 aadA2 aadE-~5
     ##    <chr>         <dbl> <dbl>   <dbl>   <dbl>   <dbl>   <dbl> <dbl> <dbl>   <dbl>
     ##  1 GCA_01263718~     0     0       0       0       0       0     0     0       0
@@ -92,7 +92,7 @@ args_data
     ##  8 GCA_01263786~     0     0       0       0       0       0     0     0       0
     ##  9 GCA_01264252~     0     0       0       0       0       0     0     0       0
     ## 10 GCA_01264264~     0     0       0       0       0       0     0     0       0
-    ## # ... with 434 more rows, 56 more variables: `ant(2'')-Ia` <dbl>,
+    ## # ... with 1,026 more rows, 78 more variables: `ant(2'')-Ia` <dbl>,
     ## #   `ant(6)-Ia` <dbl>, `aph(2'')-Ia` <dbl>, `aph(2'')-Ic` <dbl>,
     ## #   `aph(2'')-If` <dbl>, `aph(2'')-Ig` <dbl>, `aph(3'')-Ib` <dbl>,
     ## #   `aph(3')-III` <dbl>, `aph(3')-IIa` <dbl>, `aph(3')-Ia` <dbl>,
@@ -111,7 +111,7 @@ snps_data <- read_tsv(snps_data_filepath, col_names = c("chrom", "pos", "ref", "
     ##   dat <- vroom(...)
     ##   problems(dat)
 
-    ## Rows: 3512 Columns: 9
+    ## Rows: 4552 Columns: 9
     ## -- Column specification --------------------------------------------------------
     ## Delimiter: "\t"
     ## chr (6): chrom, ref, alt, tgt, gene_name, sample_name
@@ -127,7 +127,7 @@ snps_data <- snps_data %>%
 snps_data
 ```
 
-    ## # A tibble: 3,512 x 9
+    ## # A tibble: 4,552 x 9
     ##    chrom             pos ref   alt   tgt   gene_name   gene_pos tax_id sample_~1
     ##    <chr>           <dbl> <chr> <chr> <chr> <chr>          <dbl>  <dbl> <chr>    
     ##  1 NZ_KB944666.1 2170478 A     G     A/G   WMS_RS13655      234   1351 1351.853 
@@ -140,7 +140,7 @@ snps_data
     ##  8 NZ_KB944666.1 2170559 T     C     T/C   WMS_RS13655      315   1351 1351.853 
     ##  9 NZ_KB944666.1 2170562 C     G     C/G   WMS_RS13655      318   1351 1351.853 
     ## 10 NZ_KB944666.1 2170571 A     G     A/G   WMS_RS13655      327   1351 1351.853 
-    ## # ... with 3,502 more rows, and abbreviated variable name 1: sample_name
+    ## # ... with 4,542 more rows, and abbreviated variable name 1: sample_name
 
 ``` r
 # Reference genomes (in BED format)
@@ -295,7 +295,7 @@ args_data %>%
   arrange(desc(nulls))
 ```
 
-    ## # A tibble: 347 x 2
+    ## # A tibble: 939 x 2
     ##    sample_name     nulls
     ##    <chr>           <dbl>
     ##  1 GCA_012637185.1     0
@@ -308,7 +308,7 @@ args_data %>%
     ##  8 GCA_012637865.1     0
     ##  9 GCA_012642525.1     0
     ## 10 GCA_012642645.1     0
-    ## # ... with 337 more rows
+    ## # ... with 929 more rows
 
 We have no nulls values for ARGs.
 
@@ -322,20 +322,20 @@ args_data %>%
   arrange(desc(count))
 ```
 
-    ## # A tibble: 347 x 2
+    ## # A tibble: 939 x 2
     ##    sample_name     count
     ##    <chr>           <dbl>
     ##  1 GCA_005295425.1    11
-    ##  2 GCA_003873715.1    10
-    ##  3 GCA_005284365.1    10
-    ##  4 GCA_005284965.1    10
-    ##  5 GCA_005285325.1    10
-    ##  6 GCA_005283225.1     9
-    ##  7 GCA_005283685.1     9
-    ##  8 GCA_005283705.1     9
-    ##  9 GCA_005283725.1     9
-    ## 10 GCA_005284065.1     9
-    ## # ... with 337 more rows
+    ##  2 GCA_006497995.1    11
+    ##  3 GCA_006498475.1    11
+    ##  4 GCA_006627885.1    11
+    ##  5 GCA_006630465.1    11
+    ##  6 GCA_005289845.1    11
+    ##  7 GCA_005291405.1    11
+    ##  8 GCA_003873715.1    10
+    ##  9 GCA_005284365.1    10
+    ## 10 GCA_005284965.1    10
+    ## # ... with 929 more rows
 
 ``` r
 # Mean number of resistance genes per sample
@@ -345,7 +345,7 @@ args_data %>%
   pull()
 ```
 
-    ## [1] 3.700288
+    ## [1] 4.408946
 
 ``` r
 # Boxplot summarizing above information
@@ -474,20 +474,20 @@ snps_data_wide %>%
   arrange(desc(nulls))
 ```
 
-    ## # A tibble: 35 x 2
+    ## # A tibble: 63 x 2
     ##    sample_name     nulls
     ##    <chr>           <dbl>
-    ##  1 GCA_005287105.1    95
-    ##  2 GCA_005284005.1    95
-    ##  3 GCA_012708885.1    95
-    ##  4 GCA_012642705.1    95
-    ##  5 GCA_012749135.1    95
-    ##  6 GCA_012714385.1    95
-    ##  7 GCA_012714465.1    95
-    ##  8 GCA_012687445.1    95
-    ##  9 GCA_012708785.1    95
-    ## 10 GCA_004227885.1    95
-    ## # ... with 25 more rows
+    ##  1 GCA_005287105.1    96
+    ##  2 GCA_005284005.1    96
+    ##  3 GCA_012708885.1    96
+    ##  4 GCA_012642705.1    96
+    ##  5 GCA_012749135.1    96
+    ##  6 GCA_012714385.1    96
+    ##  7 GCA_012714465.1    96
+    ##  8 GCA_012687445.1    96
+    ##  9 GCA_012708785.1    96
+    ## 10 GCA_004227885.1    96
+    ## # ... with 53 more rows
 
 For most of the samples, there is very little coocurrences in terms of
 SNPs.
@@ -502,7 +502,7 @@ snps_data_wide %>%
   arrange(desc(count))
 ```
 
-    ## # A tibble: 35 x 2
+    ## # A tibble: 63 x 2
     ##    sample_name     count
     ##    <chr>           <dbl>
     ##  1 GCA_012688215.1    12
@@ -510,12 +510,12 @@ snps_data_wide %>%
     ##  3 GCA_012642525.1     9
     ##  4 GCA_012688045.1     8
     ##  5 GCA_005286905.1     7
-    ##  6 GCA_012704445.1     6
-    ##  7 GCA_012686285.1     6
-    ##  8 GCA_012708785.1     5
-    ##  9 GCA_012708885.1     4
-    ## 10 GCA_012735855.1     4
-    ## # ... with 25 more rows
+    ##  6 GCA_005294445.1     7
+    ##  7 GCA_012704445.1     6
+    ##  8 GCA_012686285.1     6
+    ##  9 GCA_005292485.1     6
+    ## 10 GCA_012708785.1     5
+    ## # ... with 53 more rows
 
 ``` r
 # Mean number of SNPs per sample
@@ -525,7 +525,7 @@ snps_data_wide %>%
   pull()
 ```
 
-    ## [1] 3.342857
+    ## [1] 3.047619
 
 ``` r
 # Boxplot summarizing above information
@@ -538,6 +538,8 @@ snps_data_wide %>%
 ```
 
 ![](figures/unnamed-chunk-18-1.png)<!-- -->
+
+\#TODO: remove outliers properly
 
 ## 3.3 AMR labels
 
