@@ -21,11 +21,15 @@ knitr::opts_chunk$set(echo = TRUE, rows.print = 25, fig.path = "figures/")
 library(tidyverse)
 ```
 
-# Import data
+# Constant/Config variables
 
 ```{r}
 batch_number <- "_batch3"
+MAX_NUMBER_OF_SNPS <- 10
+MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 ```
+
+# Import data
 
 ```{r}
 # ARGs (Antibiotic Resistance Genes)
@@ -194,7 +198,6 @@ But before that, let's do some sanity checks.
 snps_data <- snps_data %>%
   filter(!is.na(gene_name))
 # Filter out SNPS which count for >5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this
-MAX_NUMBER_OF_SNPS <- 5
 snps_data <- snps_data %>%
   group_by(sample_name, gene_name) %>%
   mutate(count = n()) %>%
@@ -304,10 +307,6 @@ amr_labels <- amr_labels %>%
 ```
 
 ### Cleaning
-
-```{r}
-MAX_NULLS_PER_ANTIBIOTIC <- 30
-```
 
 We will remove those antibiotics with more than `r MAX_NULLS_PER_ANTIBIOTIC`% of null values.
 
