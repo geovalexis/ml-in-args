@@ -4,3 +4,4 @@
 **reference_genomes
 *.log
 **databases
+pyrightconfig.json
