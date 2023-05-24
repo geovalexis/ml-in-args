@@ -5,29 +5,31 @@ May 17, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
-- <a href="#2-import-data" id="toc-2-import-data">2 Import data</a>
-- <a href="#3-clean-and-prepare-data" id="toc-3-clean-and-prepare-data">3
+- <a href="#2-constantconfig-variables"
+  id="toc-2-constantconfig-variables">2 Constant/Config variables</a>
+- <a href="#3-import-data" id="toc-3-import-data">3 Import data</a>
+- <a href="#4-clean-and-prepare-data" id="toc-4-clean-and-prepare-data">4
   Clean and prepare data</a>
-  - <a href="#31-args" id="toc-31-args">3.1 ARGs</a>
-    - <a href="#311-null-values-detection"
-      id="toc-311-null-values-detection">3.1.1 Null values detection</a>
-    - <a href="#312-outliers-detection" id="toc-312-outliers-detection">3.1.2
+  - <a href="#41-args" id="toc-41-args">4.1 ARGs</a>
+    - <a href="#411-null-values-detection"
+      id="toc-411-null-values-detection">4.1.1 Null values detection</a>
+    - <a href="#412-outliers-detection" id="toc-412-outliers-detection">4.1.2
       Outliers detection</a>
-  - <a href="#32-snps" id="toc-32-snps">3.2 SNPs</a>
-    - <a href="#321-preparation" id="toc-321-preparation">3.2.1
+  - <a href="#42-snps" id="toc-42-snps">4.2 SNPs</a>
+    - <a href="#421-preparation" id="toc-421-preparation">4.2.1
       Preparation</a>
-    - <a href="#322-null-values-detection"
-      id="toc-322-null-values-detection">3.2.2 Null values detection</a>
-    - <a href="#323-outliers-analysis" id="toc-323-outliers-analysis">3.2.3
+    - <a href="#422-null-values-detection"
+      id="toc-422-null-values-detection">4.2.2 Null values detection</a>
+    - <a href="#423-outliers-analysis" id="toc-423-outliers-analysis">4.2.3
       Outliers analysis</a>
-  - <a href="#33-amr-labels" id="toc-33-amr-labels">3.3 AMR labels</a>
-    - <a href="#331-preparation" id="toc-331-preparation">3.3.1
+  - <a href="#43-amr-labels" id="toc-43-amr-labels">4.3 AMR labels</a>
+    - <a href="#431-preparation" id="toc-431-preparation">4.3.1
       Preparation</a>
-    - <a href="#332-cleaning" id="toc-332-cleaning">3.3.2 Cleaning</a>
-    - <a href="#333-exploration" id="toc-333-exploration">3.3.3
+    - <a href="#432-cleaning" id="toc-432-cleaning">4.3.2 Cleaning</a>
+    - <a href="#433-exploration" id="toc-433-exploration">4.3.3
       Exploration</a>
-- <a href="#4-explore-data" id="toc-4-explore-data">4 Explore data</a>
-- <a href="#5-save-data" id="toc-5-save-data">5 Save data</a>
+- <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
+- <a href="#6-save-data" id="toc-6-save-data">6 Save data</a>
 
 # 1 Import libraries
 
@@ -63,11 +65,15 @@ library(tidyverse)
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
-# 2 Import data
+# 2 Constant/Config variables
 
 ``` r
-batch_number <- "_batch2"
+batch_number <- "_batch3"
+MAX_NUMBER_OF_SNPS <- 10
+MAX_NULLS_PER_ANTIBIOTIC <- 30
 ```
+
+# 3 Import data
 
 ``` r
 # ARGs (Antibiotic Resistance Genes)
@@ -79,7 +85,7 @@ args_data <- args_data %>%
 args_data
 ```
 
-    ## # A tibble: 1,036 x 88
+    ## # A tibble: 6,306 x 162
     ##    sample_name    NarA  NarB aac(3~1 aac(3~2 aac(6~3 aac(6~4 aadA1 aadA2 aadE-~5
     ##    <chr>         <dbl> <dbl>   <dbl>   <dbl>   <dbl>   <dbl> <dbl> <dbl>   <dbl>
     ##  1 GCA_01263718~     0     0       0       0       0       0     0     0       0
@@ -92,7 +98,7 @@ args_data
     ##  8 GCA_01263786~     0     0       0       0       0       0     0     0       0
     ##  9 GCA_01264252~     0     0       0       0       0       0     0     0       0
     ## 10 GCA_01264264~     0     0       0       0       0       0     0     0       0
-    ## # ... with 1,026 more rows, 78 more variables: `ant(2'')-Ia` <dbl>,
+    ## # ... with 6,296 more rows, 152 more variables: `ant(2'')-Ia` <dbl>,
     ## #   `ant(6)-Ia` <dbl>, `aph(2'')-Ia` <dbl>, `aph(2'')-Ic` <dbl>,
     ## #   `aph(2'')-If` <dbl>, `aph(2'')-Ig` <dbl>, `aph(3'')-Ib` <dbl>,
     ## #   `aph(3')-III` <dbl>, `aph(3')-IIa` <dbl>, `aph(3')-Ia` <dbl>,
@@ -111,7 +117,7 @@ snps_data <- read_tsv(snps_data_filepath, col_names = c("chrom", "pos", "ref", "
     ##   dat <- vroom(...)
     ##   problems(dat)
 
-    ## Rows: 4552 Columns: 9
+    ## Rows: 22136 Columns: 9
     ## -- Column specification --------------------------------------------------------
     ## Delimiter: "\t"
     ## chr (6): chrom, ref, alt, tgt, gene_name, sample_name
@@ -127,7 +133,7 @@ snps_data <- snps_data %>%
 snps_data
 ```
 
-    ## # A tibble: 4,552 x 9
+    ## # A tibble: 22,136 x 9
     ##    chrom             pos ref   alt   tgt   gene_name   gene_pos tax_id sample_~1
     ##    <chr>           <dbl> <chr> <chr> <chr> <chr>          <dbl>  <dbl> <chr>    
     ##  1 NZ_KB944666.1 2170478 A     G     A/G   WMS_RS13655      234   1351 1351.853 
@@ -140,7 +146,7 @@ snps_data
     ##  8 NZ_KB944666.1 2170559 T     C     T/C   WMS_RS13655      315   1351 1351.853 
     ##  9 NZ_KB944666.1 2170562 C     G     C/G   WMS_RS13655      318   1351 1351.853 
     ## 10 NZ_KB944666.1 2170571 A     G     A/G   WMS_RS13655      327   1351 1351.853 
-    ## # ... with 4,542 more rows, and abbreviated variable name 1: sample_name
+    ## # ... with 22,126 more rows, and abbreviated variable name 1: sample_name
 
 ``` r
 # Reference genomes (in BED format)
@@ -265,12 +271,12 @@ args_data <- args_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
 ```
 
-# 3 Clean and prepare data
+# 4 Clean and prepare data
 
 First of all, we will need to clean and prepare the data in order to
 perform the analysis.
 
-## 3.1 ARGs
+## 4.1 ARGs
 
 This table has the following structure:
 
@@ -285,7 +291,7 @@ is resistance or not.
 - 1: resistance gene
 - 0: non-resistance gene
 
-### 3.1.1 Null values detection
+### 4.1.1 Null values detection
 
 ``` r
 # Count number of nulls per sample
@@ -295,7 +301,7 @@ args_data %>%
   arrange(desc(nulls))
 ```
 
-    ## # A tibble: 939 x 2
+    ## # A tibble: 6,208 x 2
     ##    sample_name     nulls
     ##    <chr>           <dbl>
     ##  1 GCA_012637185.1     0
@@ -308,11 +314,11 @@ args_data %>%
     ##  8 GCA_012637865.1     0
     ##  9 GCA_012642525.1     0
     ## 10 GCA_012642645.1     0
-    ## # ... with 929 more rows
+    ## # ... with 6,198 more rows
 
 We have no nulls values for ARGs.
 
-### 3.1.2 Outliers detection
+### 4.1.2 Outliers detection
 
 ``` r
 # For each sample, how many resistance genes are present?
@@ -322,20 +328,20 @@ args_data %>%
   arrange(desc(count))
 ```
 
-    ## # A tibble: 939 x 2
+    ## # A tibble: 6,208 x 2
     ##    sample_name     count
     ##    <chr>           <dbl>
-    ##  1 GCA_005295425.1    11
-    ##  2 GCA_006497995.1    11
-    ##  3 GCA_006498475.1    11
-    ##  4 GCA_006627885.1    11
-    ##  5 GCA_006630465.1    11
-    ##  6 GCA_005289845.1    11
-    ##  7 GCA_005291405.1    11
-    ##  8 GCA_003873715.1    10
-    ##  9 GCA_005284365.1    10
-    ## 10 GCA_005284965.1    10
-    ## # ... with 929 more rows
+    ##  1 GCA_007758465.1    23
+    ##  2 GCA_008551155.1    21
+    ##  3 GCA_008477615.1    20
+    ##  4 GCA_008469665.1    19
+    ##  5 GCA_007194375.1    19
+    ##  6 GCA_007742235.1    18
+    ##  7 GCA_008478965.1    18
+    ##  8 GCA_008552695.1    18
+    ##  9 GCA_008474545.1    18
+    ## 10 GCA_007763135.1    18
+    ## # ... with 6,198 more rows
 
 ``` r
 # Mean number of resistance genes per sample
@@ -345,7 +351,7 @@ args_data %>%
   pull()
 ```
 
-    ## [1] 4.408946
+    ## [1] 3.627416
 
 ``` r
 # Boxplot summarizing above information
@@ -361,9 +367,9 @@ args_data %>%
 
 \#TODO: add analysis when final data is ready
 
-## 3.2 SNPs
+## 4.2 SNPs
 
-### 3.2.1 Preparation
+### 4.2.1 Preparation
 
 In this case, we will need to perform preparation steps for each sample,
 since the table has a different structure.
@@ -425,7 +431,6 @@ let’s do some sanity checks.
 snps_data <- snps_data %>%
   filter(!is.na(gene_name))
 # Filter out SNPS which count for >5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this
-MAX_NUMBER_OF_SNPS <- 5
 snps_data <- snps_data %>%
   group_by(sample_name, gene_name) %>%
   mutate(count = n()) %>%
@@ -464,7 +469,7 @@ snps_data_wide <- snps_data_wide %>%
   mutate(across(-c(sample_name), ~ as.numeric(snp_2_num[.x])))
 ```
 
-### 3.2.2 Null values detection
+### 4.2.2 Null values detection
 
 ``` r
 # Count number of nulls per sample in percentage
@@ -474,25 +479,25 @@ snps_data_wide %>%
   arrange(desc(nulls))
 ```
 
-    ## # A tibble: 63 x 2
+    ## # A tibble: 114 x 2
     ##    sample_name     nulls
     ##    <chr>           <dbl>
-    ##  1 GCA_005287105.1    96
-    ##  2 GCA_005284005.1    96
-    ##  3 GCA_012708885.1    96
-    ##  4 GCA_012642705.1    96
-    ##  5 GCA_012749135.1    96
-    ##  6 GCA_012714385.1    96
-    ##  7 GCA_012714465.1    96
-    ##  8 GCA_012687445.1    96
-    ##  9 GCA_012708785.1    96
-    ## 10 GCA_004227885.1    96
-    ## # ... with 53 more rows
+    ##  1 GCA_005287105.1  98.0
+    ##  2 GCA_012687565.1  98.0
+    ##  3 GCA_005284005.1  98.0
+    ##  4 GCA_012708885.1  98.0
+    ##  5 GCA_012714385.1  98.0
+    ##  6 GCA_012714465.1  98.0
+    ##  7 GCA_012708785.1  98.0
+    ##  8 GCA_005285885.1  98.0
+    ##  9 GCA_005282525.1  98.0
+    ## 10 GCA_005285105.1  98.0
+    ## # ... with 104 more rows
 
 For most of the samples, there is very little coocurrences in terms of
 SNPs.
 
-### 3.2.3 Outliers analysis
+### 4.2.3 Outliers analysis
 
 ``` r
 # For each sample, how many SNPs are present?
@@ -502,20 +507,20 @@ snps_data_wide %>%
   arrange(desc(count))
 ```
 
-    ## # A tibble: 63 x 2
+    ## # A tibble: 114 x 2
     ##    sample_name     count
     ##    <chr>           <dbl>
-    ##  1 GCA_012688215.1    12
-    ##  2 GCA_012677385.1     9
-    ##  3 GCA_012642525.1     9
-    ##  4 GCA_012688045.1     8
-    ##  5 GCA_005286905.1     7
-    ##  6 GCA_005294445.1     7
-    ##  7 GCA_012704445.1     6
-    ##  8 GCA_012686285.1     6
-    ##  9 GCA_005292485.1     6
-    ## 10 GCA_012708785.1     5
-    ## # ... with 53 more rows
+    ##  1 GCA_012686285.1    37
+    ##  2 GCA_012688045.1    33
+    ##  3 GCA_012688215.1    25
+    ##  4 GCA_012717195.1    24
+    ##  5 GCA_012686445.1    21
+    ##  6 GCA_012735855.1    20
+    ##  7 GCA_012714445.1    20
+    ##  8 GCA_008524145.1    20
+    ##  9 GCA_012642525.1    18
+    ## 10 GCA_005289765.1    17
+    ## # ... with 104 more rows
 
 ``` r
 # Mean number of SNPs per sample
@@ -525,7 +530,7 @@ snps_data_wide %>%
   pull()
 ```
 
-    ## [1] 3.047619
+    ## [1] 5.850877
 
 ``` r
 # Boxplot summarizing above information
@@ -539,9 +544,7 @@ snps_data_wide %>%
 
 ![](figures/unnamed-chunk-18-1.png)<!-- -->
 
-\#TODO: remove outliers properly
-
-## 3.3 AMR labels
+## 4.3 AMR labels
 
 The structure of this table is as follows:
 
@@ -559,7 +562,7 @@ sample. The values of each cell can be:
 One sample can be resistant to multiple antibiotics, so we can have
 multiple 1s in the same row.
 
-### 3.3.1 Preparation
+### 4.3.1 Preparation
 
 Adapt data so it has the same sampleIds as ARGS and variant calling
 data. AMR labes happens to have the biosamples accession numbers as
@@ -575,11 +578,7 @@ amr_labels <- amr_labels %>%
   select(SampleID, everything())
 ```
 
-### 3.3.2 Cleaning
-
-``` r
-MAX_NULLS_PER_ANTIBIOTIC <- 30
-```
+### 4.3.2 Cleaning
 
 We will remove those antibiotics with more than 30% of null values.
 
@@ -627,7 +626,7 @@ amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
 ```
 
-### 3.3.3 Exploration
+### 4.3.3 Exploration
 
 Count how many samples are resistance to each antibiotic:
 
@@ -665,9 +664,9 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-24-1.png)<!-- -->
+![](figures/unnamed-chunk-23-1.png)<!-- -->
 
-# 4 Explore data
+# 5 Explore data
 
 Median number of resistant genes per antibiotic:
 
@@ -685,7 +684,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-25-1.png)<!-- -->
+![](figures/unnamed-chunk-24-1.png)<!-- -->
 
 Median number of SNPs per antibiotic:
 
@@ -706,9 +705,9 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
-![](figures/unnamed-chunk-26-1.png)<!-- -->
+![](figures/unnamed-chunk-25-1.png)<!-- -->
 
-# 5 Save data
+# 6 Save data
 
 ``` r
 snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
