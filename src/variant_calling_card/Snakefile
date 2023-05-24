@@ -1,0 +1,72 @@
+configfile: "../config.yaml"
+
+species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
+samples_by_specie = {
+    "195": ["GCA_005282325.1_PDT000104930.2_genomic"]
+}
+
+
+latest_card_db_version = "3.2.6"
+latest_wildcard_db_version = "4.0.0" #TODO: get version number from latest CARD release
+
+rule all:
+    input:
+        ["results/{specie_id}/{sample}.json".format(specie_id=specie_id, sample=sample)  
+        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
+
+rule download_card_database:
+    output:
+        "database/.all_data_downloaded"
+    shell:
+        """
+        echo "Downloading CARD Reference data..."
+        wget -O database/card_db.tar.gz https://card.mcmaster.ca/latest/data
+        tar -xvf database/card_db.tar.gz ./card.json
+        mv card.json database/card.json
+        rm database/card_db.tar.gz
+        echo "Downloading CARD Wildcard data..."
+        wget -O database/wildcard_data.tar.bz2 https://card.mcmaster.ca/latest/variants
+        mkdir -p database/wildcard
+        echo "Extracting CARD Wildcard data..."
+        tar -xjf database/wildcard_data.tar.bz2 -C database/wildcard
+        gunzip database/wildcard/*.gz
+        echo "Creating FASTA reference files..."
+        rgi card_annotation -i database/card.json
+        rgi wildcard_annotation -i database/wildcard --card_json database/card.json -v {latest_wildcard_db_version}
+        touch {output}
+        """
+
+rule load_card_database:
+    input:
+        "database/.all_data_downloaded"
+    output:
+        temp("database/card_db_version.txt")
+    conda:
+        "envs/card.yaml"
+    shell:
+        """
+        rgi load \
+        --card_json database/card.json \
+        --card_annotation database/card_database_v{latest_card_db_version}_all.fasta \
+        --card_annotation_all_models database/card_database_v{latest_card_db_version}_all.fasta \
+        --wildcard_annotation database/wildcard_database_v{latest_wildcard_db_version}.fasta \
+        --wildcard_annotation_all_models database/wildcard_database_v{latest_wildcard_db_version}_all.fasta \
+        --wildcard_index database/wildcard/index-for-model-sequences.txt \
+        --wildcard_version {latest_wildcard_db_version} \
+        --debug
+        rgi database --version > {output}
+        """
+
+rule compute_args_and_variants:
+    input:
+        fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna",
+        card_db_version="database/card_db_version.txt"
+    output:
+        "results/{specie_id}/{sample}.json"
+    conda:
+        "envs/card.yaml"
+    shell:
+        """
+        rgi main --input_sequence {input.fasta} --output_file results/{wildcards.specie_id}/{wildcards.sample} --clean --num_threads {threads}
+        """
+
