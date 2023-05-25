@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 17, 2023
+May 26, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -22,11 +22,17 @@ May 17, 2023
       id="toc-422-null-values-detection">4.2.2 Null values detection</a>
     - <a href="#423-outliers-analysis" id="toc-423-outliers-analysis">4.2.3
       Outliers analysis</a>
-  - <a href="#43-amr-labels" id="toc-43-amr-labels">4.3 AMR labels</a>
-    - <a href="#431-preparation" id="toc-431-preparation">4.3.1
+  - <a href="#43-snps-from-card" id="toc-43-snps-from-card">4.3 SNPs from
+    CARD</a>
+  - <a href="#44-filtering" id="toc-44-filtering">4.4 Filtering</a>
+  - <a href="#45-explorationvisualization"
+    id="toc-45-explorationvisualization">4.5 Exploration/Visualization</a>
+  - <a href="#46-preparation" id="toc-46-preparation">4.6 Preparation</a>
+  - <a href="#47-amr-labels" id="toc-47-amr-labels">4.7 AMR labels</a>
+    - <a href="#471-preparation" id="toc-471-preparation">4.7.1
       Preparation</a>
-    - <a href="#432-cleaning" id="toc-432-cleaning">4.3.2 Cleaning</a>
-    - <a href="#433-exploration" id="toc-433-exploration">4.3.3
+    - <a href="#472-cleaning" id="toc-472-cleaning">4.7.2 Cleaning</a>
+    - <a href="#473-exploration" id="toc-473-exploration">4.7.3
       Exploration</a>
 - <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
 - <a href="#6-save-data" id="toc-6-save-data">6 Save data</a>
@@ -70,7 +76,7 @@ library(tidyverse)
 ``` r
 batch_number <- "_batch3"
 MAX_NUMBER_OF_SNPS <- 10
-MAX_NULLS_PER_ANTIBIOTIC <- 30
+MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 ```
 
 # 3 Import data
@@ -147,6 +153,55 @@ snps_data
     ##  9 NZ_KB944666.1 2170562 C     G     C/G   WMS_RS13655      318   1351 1351.853 
     ## 10 NZ_KB944666.1 2170571 A     G     A/G   WMS_RS13655      327   1351 1351.853 
     ## # ... with 22,126 more rows, and abbreviated variable name 1: sample_name
+
+``` r
+# Results from CARD database
+card_data_filepath <- paste0("data/results/card/card_results", "_batch1", ".tsv")
+card_data <- read_tsv(card_data_filepath, na = c("n/a"))
+```
+
+    ## Warning: One or more parsing issues, call `problems()` on your data frame for details,
+    ## e.g.:
+    ##   dat <- vroom(...)
+    ##   problems(dat)
+
+    ## Rows: 8120 Columns: 27
+    ## -- Column specification --------------------------------------------------------
+    ## Delimiter: "\t"
+    ## chr (16): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
+    ## dbl  (9): TAX_ID, Start, Stop, Pass_Bitscore, Best_Hit_Bitscore, Best_Identi...
+    ## lgl  (2): Other_SNPs, Nudged
+    ## 
+    ## i Use `spec()` to retrieve the full column specification for this data.
+    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+# Fix/extract name of samples
+card_data <- card_data %>%
+  mutate(SAMPLE_ID = str_extract(SAMPLE_ID, "^\\w+.\\d+"))
+card_data
+```
+
+    ## # A tibble: 8,120 x 27
+    ##    TAX_ID SAMPLE_ID  ORF_ID Contig  Start   Stop Orien~1 Cut_Off Pass_~2 Best_~3
+    ##     <dbl> <chr>      <chr>  <chr>   <dbl>  <dbl> <chr>   <chr>     <dbl>   <dbl>
+    ##  1    195 GCA_00528~ AACMV~ AACMV~  40782  41555 +       Perfect     500    516.
+    ##  2    195 GCA_00528~ AACMV~ AACMV~   1086   3005 +       Strict      300   1322.
+    ##  3    195 GCA_00528~ AACMV~ AACMV~  22802  23575 +       Perfect     500    516.
+    ##  4    195 GCA_00528~ AACMV~ AACMV~   1107   3026 +       Strict      300   1322.
+    ##  5    195 GCA_00528~ AACMV~ AACMV~ 223686 226253 +       Strict     1200   1496.
+    ##  6    195 GCA_00528~ AACMR~ AACMR~  39847  40620 +       Perfect     500    516.
+    ##  7    195 GCA_00528~ AACMR~ AACMR~  18355  20274 +       Strict      300   1304.
+    ##  8    195 GCA_00528~ AACMR~ AACMR~   3297   5216 +       Strict      300   1304.
+    ##  9    195 GCA_00528~ AACMR~ AACMR~   2577   3350 +       Perfect     500    516.
+    ## 10    197 GCA_00529~ AACNR~ AACNR~  20452  21225 -       Perfect     500    516.
+    ## # ... with 8,110 more rows, 17 more variables: Best_Hit_ARO <chr>,
+    ## #   Best_Identities <dbl>, ARO <dbl>, Model_type <chr>,
+    ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <lgl>, `Drug Class` <chr>,
+    ## #   `Resistance Mechanism` <chr>, `AMR Gene Family` <chr>, Predicted_DNA <chr>,
+    ## #   Predicted_Protein <chr>, CARD_Protein_Sequence <chr>,
+    ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <dbl>,
+    ## #   Nudged <lgl>, Note <chr>, and abbreviated variable names ...
 
 ``` r
 # Reference genomes (in BED format)
@@ -267,6 +322,8 @@ amr_labels <- amr_labels %>%
   filter(`SampleID` %in% samples_metadata$biosample_accession)
 snps_data <- snps_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
+card_data <- card_data %>%
+  filter(SAMPLE_ID %in% samples_metadata$assembly_accession)
 args_data <- args_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
 ```
@@ -363,7 +420,7 @@ args_data %>%
   theme_bw()
 ```
 
-![](figures/unnamed-chunk-10-1.png)<!-- -->
+![](figures/unnamed-chunk-11-1.png)<!-- -->
 
 \#TODO: add analysis when final data is ready
 
@@ -542,9 +599,76 @@ snps_data_wide %>%
   theme_bw()
 ```
 
-![](figures/unnamed-chunk-18-1.png)<!-- -->
+![](figures/unnamed-chunk-19-1.png)<!-- -->
 
-## 4.3 AMR labels
+## 4.3 SNPs from CARD
+
+Although [CARD database](https://card.mcmaster.ca/) offers us a large
+variety of information about AMR vectors, we will only use the SNPs
+information. For more information about the output format, please refer
+to the official [documentation](https://github.com/arpcard/rgi#id72).
+
+## 4.4 Filtering
+
+We will be filtering by the following criteria: \* Column `Model_type`
+must be either `protein variant model` or `protein overexpression model`
+\* They must have a value within the column `SNPs_in_Best_Hit_ARO`.
+NOTE: this column can have multiple values separated by commas.
+
+``` r
+# Filter by Model_type
+card_snps_data <- card_data %>%
+  filter(Model_type %in% c("protein variant model", "protein overexpression model"))
+
+# Filter by SNPs_in_Best_Hit_ARO
+card_snps_data <- card_snps_data %>%
+  filter(!is.na(SNPs_in_Best_Hit_ARO))
+
+# Explode SNPs_in_Best_Hit_ARO
+card_snps_data <- card_snps_data %>%
+  mutate(SNPs_in_Best_Hit_ARO = strsplit(SNPs_in_Best_Hit_ARO, ",")) %>%
+  unnest(SNPs_in_Best_Hit_ARO)
+```
+
+## 4.5 Exploration/Visualization
+
+``` r
+# Boxplot showing how many SNPs are present in each sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  theme_bw()
+```
+
+![](figures/unnamed-chunk-21-1.png)<!-- -->
+
+## 4.6 Preparation
+
+Now that we have filtered the data, we will need to transform it into a
+format compatible for ML algorithms, that is, a table with the features
+of interest as columns and the samples as rows. In this case, the
+features we are interested in are the SNPs, so we will need to pivot the
+table so that each row represents a sample and each column represents a
+SNP ID (column `SNPs_in_Best_Hit_ARO`). The value of each cell will be
+the number of times that the SNP appears in the sample.
+
+``` r
+# Pivot table
+card_snps_data_wide <- card_snps_data %>%
+  select(SAMPLE_ID, SNPs_in_Best_Hit_ARO) %>%
+  group_by(SAMPLE_ID, SNPs_in_Best_Hit_ARO) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = SNPs_in_Best_Hit_ARO, values_from = count, values_fill = 0) %>%
+  ungroup()
+```
+
+    ## `summarise()` has grouped output by 'SAMPLE_ID'. You can override using the
+    ## `.groups` argument.
+
+## 4.7 AMR labels
 
 The structure of this table is as follows:
 
@@ -562,7 +686,7 @@ sample. The values of each cell can be:
 One sample can be resistant to multiple antibiotics, so we can have
 multiple 1s in the same row.
 
-### 4.3.1 Preparation
+### 4.7.1 Preparation
 
 Adapt data so it has the same sampleIds as ARGS and variant calling
 data. AMR labes happens to have the biosamples accession numbers as
@@ -578,7 +702,7 @@ amr_labels <- amr_labels %>%
   select(SampleID, everything())
 ```
 
-### 4.3.2 Cleaning
+### 4.7.2 Cleaning
 
 We will remove those antibiotics with more than 30% of null values.
 
@@ -626,7 +750,7 @@ amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
 ```
 
-### 4.3.3 Exploration
+### 4.7.3 Exploration
 
 Count how many samples are resistance to each antibiotic:
 
@@ -664,14 +788,14 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-23-1.png)<!-- -->
+![](figures/unnamed-chunk-27-1.png)<!-- -->
 
 # 5 Explore data
 
 Median number of resistant genes per antibiotic:
 
 ``` r
-# Boxplot with mean number of resistant genes per antibiotic
+# Boxplot with median number of resistant genes per antibiotic
 args_data %>%
   mutate(n_args = rowSums(select(., -sample_name))) %>%
   select(sample_name, n_args) %>%
@@ -684,13 +808,13 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-24-1.png)<!-- -->
+![](figures/unnamed-chunk-28-1.png)<!-- -->
 
 Median number of SNPs per antibiotic:
 
 ``` r
-# Boxplot with mean number of SNPs per antibiotic
-# In this, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
+# Boxplot with median number of SNPs per antibiotic
+# In this case, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
 snps_data %>%
   ungroup() %>%
   select(sample_name) %>%
@@ -705,7 +829,25 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
-![](figures/unnamed-chunk-25-1.png)<!-- -->
+![](figures/unnamed-chunk-29-1.png)<!-- -->
+
+Median number of CARD SNPs per antibiotic:
+
+``` r
+# Boxplot with median number of CARD SNPs per antibiotic
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_card_snps = n()) %>%
+  left_join(amr_labels, by = c("SAMPLE_ID" = "SampleID")) %>%
+  pivot_longer(cols = -c(SAMPLE_ID, n_card_snps), names_to = "antibiotic", values_to = "resistant") %>%
+  filter(resistant == 1) %>%
+  ggplot(aes(x = antibiotic, y = n_card_snps, color = antibiotic)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of CARD SNPs")
+```
+
+![](figures/unnamed-chunk-30-1.png)<!-- -->
 
 # 6 Save data
 
@@ -713,6 +855,10 @@ snps_data %>%
 snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
+
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch1", "_cleaned.tsv")
+card_snps_data_wide %>%
+  write_tsv(card_snps_data_output_path)
 
 args_data_output_path <- paste0("data/results/args_calling/args_data", batch_number, "_cleaned.tsv")
 args_data %>%
