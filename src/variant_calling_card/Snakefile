@@ -17,23 +17,27 @@ rule all:
 rule download_card_database:
     output:
         directory("database")
+    conda:
+        "envs/card.yaml"        
     shell:
         """
-        echo "Downloading CARD Reference data..."
-        wget -O database/card_db.tar.gz https://card.mcmaster.ca/latest/data
+        mkdir -p database
+        echo "\nDownloading CARD Reference data..."
+        curl -o database/card_db.tar.gz https://card.mcmaster.ca/latest/data
         tar -xvf database/card_db.tar.gz ./card.json
         mv card.json database/card.json
         rm database/card_db.tar.gz
-        echo "Downloading CARD Wildcard data..."
-        wget -O database/wildcard_data.tar.bz2 https://card.mcmaster.ca/latest/variants
+        echo "\nDownloading CARD Wildcard data..."
+        curl -o database/wildcard_data.tar.bz2 https://card.mcmaster.ca/latest/variants
         mkdir -p database/wildcard
         echo "Extracting CARD Wildcard data..."
         tar -xjf database/wildcard_data.tar.bz2 -C database/wildcard
         gunzip database/wildcard/*.gz
-        echo "Creating FASTA reference files..."
+        echo "\nCreating FASTA reference files..."
         rgi card_annotation -i database/card.json
         rgi wildcard_annotation -i database/wildcard --card_json database/card.json -v {latest_wildcard_db_version}
-        touch {output}
+        mv card_database* database/
+        mv wildcard_database* database/
         """
 
 rule load_card_database:
@@ -45,6 +49,7 @@ rule load_card_database:
         "envs/card.yaml"
     shell:
         """
+        rgi clean --local
         rgi load \
         --card_json database/card.json \
         --card_annotation database/card_database_v{latest_card_db_version}_all.fasta \
