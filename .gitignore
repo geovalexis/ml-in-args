@@ -3,5 +3,6 @@
 **results
 **reference_genomes
 *.log
-**databases
+**database*
+**localDB
 pyrightconfig.json

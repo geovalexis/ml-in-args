@@ -2,9 +2,9 @@ configfile: "../config.yaml"
 
 species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
 samples_by_specie = {
-    "195": ["GCA_005282325.1_PDT000104930.2_genomic"]
+    specie.name: [os.path.splitext(sample.name)[0] for sample in os.scandir(specie) if sample.name.endswith(".fna")] 
+    for specie in species_paths
 }
-
 
 latest_card_db_version = "3.2.6"
 latest_wildcard_db_version = "4.0.0" #TODO: get version number from latest CARD release
@@ -16,7 +16,7 @@ rule all:
 
 rule download_card_database:
     output:
-        "database/.all_data_downloaded"
+        directory("database")
     shell:
         """
         echo "Downloading CARD Reference data..."
@@ -38,9 +38,9 @@ rule download_card_database:
 
 rule load_card_database:
     input:
-        "database/.all_data_downloaded"
+        "database"
     output:
-        temp("database/card_db_version.txt")
+        directory("localDB")
     conda:
         "envs/card.yaml"
     shell:
@@ -53,20 +53,19 @@ rule load_card_database:
         --wildcard_annotation_all_models database/wildcard_database_v{latest_wildcard_db_version}_all.fasta \
         --wildcard_index database/wildcard/index-for-model-sequences.txt \
         --wildcard_version {latest_wildcard_db_version} \
-        --debug
-        rgi database --version > {output}
+        --local --debug
         """
 
 rule compute_args_and_variants:
     input:
         fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna",
-        card_db_version="database/card_db_version.txt"
+        loaded_card_db="localDB"
     output:
         "results/{specie_id}/{sample}.json"
     conda:
         "envs/card.yaml"
     shell:
         """
-        rgi main --input_sequence {input.fasta} --output_file results/{wildcards.specie_id}/{wildcards.sample} --clean --num_threads {threads}
+        rgi main --input_sequence {input.fasta} --output_file results/{wildcards.specie_id}/{wildcards.sample} --clean --num_threads {threads} --local --debug
         """
 
