@@ -25,7 +25,7 @@ library(tidyverse)
 
 ```{r}
 batch_number <- "_batch3"
-MAX_NUMBER_OF_SNPS <- 10
+MAX_NUMBER_OF_SNPS_PER_SAMPLE <- 10
 MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 ```
 
@@ -194,16 +194,48 @@ In addition, we will encode these values into numerical values so that we do lim
 But before that, let's do some sanity checks.
 
 ```{r}
+original_size <- nrow(snps_data)
+
 # Filter out SNPs with no gene name (which are the same as sample with non gene_pos)
 snps_data <- snps_data %>%
   filter(!is.na(gene_name))
-# Filter out SNPS which count for >5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this
-snps_data <- snps_data %>%
+
+# Filter out SNPS which count for a specified number of time in the same gene (this is considered an anomaly, due to reference genome, etc.)
+# snps_data <- snps_data %>%
+#   group_by(sample_name, gene_name) %>%
+#   mutate(count = n()) %>%
+#   filter(count <= MAX_NUMBER_OF_SNPS_PER_SAMPLE) %>%
+#   select(-count)
+
+# Count number of SNPs per gene and sample
+snps_data %>%
   group_by(sample_name, gene_name) %>%
-  mutate(count = n()) %>%
-  filter(count <= MAX_NUMBER_OF_SNPS) %>%
-  select(-count)
+  summarise(gene_pos_count = n_distinct(gene_pos)) %>%
+  arrange(desc(gene_pos_count))
+
+# Drop those genes with anormal number of SNPs
+snps_data <- snps_data %>%
+  filter(!gene_name %in% c("sspH2", "STM2240", "STM1860"))
+
+# Boxplot with number of SNPs per gene
+snps_data %>%
+  group_by(sample_name, gene_name) %>%
+  summarise(gene_pos_count = n_distinct(gene_pos)) %>%
+  arrange(desc(gene_pos_count)) %>%
+  slice_head(n = 10) %>%
+  ggplot(aes(x = "", y = gene_pos_count, fill = gene_name)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per gene") +
+  theme_bw()
+filtered_out_rows <- original_size - nrow(snps_data)
 ```
+
+After filtering out SNPs with no gene name and SNPs which count for a specified number of time in the same gene, we have filtered out `r filtered_out_rows` rows.
+
+
+#TODO: assign value of 0 when no SNP is found but gene does belong to sample
+
 
 Pivot table with above specifications:
 
@@ -212,8 +244,18 @@ snps_data_wide <- snps_data %>%
   select(sample_name, gene_name, gene_pos, alt) %>%
   pivot_wider(names_from = c("gene_pos"), values_from = alt, values_fill = "NO-SNP") %>%
   pivot_longer(cols = -c(sample_name, gene_name), names_to = "gene_pos", values_to = "alt") %>%
-  pivot_wider(names_from = c("gene_name", "gene_pos"), values_from = alt, values_fill = "NULL", names_sep = "/") %>%
-  ungroup()
+  pivot_wider(names_from = c("gene_name", "gene_pos"), values_from = alt, values_fill = "NULL", names_sep = "/")
+
+# Create dataframe with remaining samples, taking into account the following:
+# * it must have the same columns as snps_data_wide
+# * the assigned values will depend upon the gene/pos columns. If gene is present in the sample, then the value will be NO-SNP, otherwise it will be NULL
+# * Whether the gene belongs to the samples can be figured out by looking at the reference genomes
+remaining_samples <- setdiff(samples_metadata$assembly_accession, snps_data_wide$sample_name)
+remaining_samples_snps <- list()
+for (sample in remaining_samples) {
+  remaining_samples_snps[[sample]] <- refs_genomes[[as.character(samples_metadata[samples_metadata$assembly_accession == sample, "tax_id"])]]
+}
+
 ```
 
 Now we will encode the values into numerical values. We will use the following encoding:

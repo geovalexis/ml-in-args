@@ -602,7 +602,7 @@ padding-top: 0px;
 <body>
 
 <h1 id="data-exploration">Data exploration</h1>
-<p>Geovanny Risco May 17, 2023</p>
+<p>Geovanny Risco May 22, 2023</p>
 <ul>
 <li><a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
 libraries</a></li>
@@ -671,8 +671,8 @@ data</a></li>
 ## x dplyr::lag()    masks stats::lag()</code></pre>
 <h1 id="id_2-constantconfig-variables">2 Constant/Config variables</h1>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>batch_number <span class="ot">&lt;-</span> <span class="st">&quot;_batch3&quot;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>MAX_NUMBER_OF_SNPS <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>MAX_NULLS_PER_ANTIBIOTIC <span class="ot">&lt;-</span> <span class="dv">30</span></span></code></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>MAX_NUMBER_OF_SNPS_PER_SAMPLE <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>MAX_NULLS_PER_ANTIBIOTIC <span class="ot">&lt;-</span> <span class="dv">30</span> <span class="co"># In percentage</span></span></code></pre></div>
 <h1 id="id_3-import-data">3 Import data</h1>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ARGs (Antibiotic Resistance Genes)</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>args_data_filepath <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;data/results/args_calling/args_table&quot;</span>, batch_number, <span class="st">&quot;.csv&quot;</span>)</span>
@@ -1068,12 +1068,14 @@ that, let’s do some sanity checks.</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter out SNPs with no gene name (which are the same as sample with non gene_pos)</span></span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>snps_data <span class="ot">&lt;-</span> snps_data <span class="sc">%&gt;%</span></span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(gene_name))</span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter out SNPS which count for &gt;5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this</span></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter out SNPS which count for a specified number of time in the same gene (this is considered an anomaly, due to reference genome, etc.)</span></span>
 <span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>snps_data <span class="ot">&lt;-</span> snps_data <span class="sc">%&gt;%</span></span>
 <span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(sample_name, gene_name) <span class="sc">%&gt;%</span></span>
 <span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">count =</span> <span class="fu">n</span>()) <span class="sc">%&gt;%</span></span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(count <span class="sc">&lt;=</span> MAX_NUMBER_OF_SNPS) <span class="sc">%&gt;%</span></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>count)</span></code></pre></div>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(count <span class="sc">&lt;=</span> MAX_NUMBER_OF_SNPS_PER_SAMPLE) <span class="sc">%&gt;%</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>count)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a><span class="co">#TODO: assign value of 0 when no SNP is found but gene does belong to sample</span></span></code></pre></div>
 <p>Pivot table with above specifications:</p>
 <div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>snps_data_wide <span class="ot">&lt;-</span> snps_data <span class="sc">%&gt;%</span></span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(sample_name, gene_name, gene_pos, alt) <span class="sc">%&gt;%</span></span>

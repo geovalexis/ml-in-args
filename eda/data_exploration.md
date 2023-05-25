@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 17, 2023
+May 22, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -69,8 +69,8 @@ library(tidyverse)
 
 ``` r
 batch_number <- "_batch3"
-MAX_NUMBER_OF_SNPS <- 10
-MAX_NULLS_PER_ANTIBIOTIC <- 30
+MAX_NUMBER_OF_SNPS_PER_SAMPLE <- 10
+MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 ```
 
 # 3 Import data
@@ -430,12 +430,14 @@ let’s do some sanity checks.
 # Filter out SNPs with no gene name (which are the same as sample with non gene_pos)
 snps_data <- snps_data %>%
   filter(!is.na(gene_name))
-# Filter out SNPS which count for >5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this
+# Filter out SNPS which count for a specified number of time in the same gene (this is considered an anomaly, due to reference genome, etc.)
 snps_data <- snps_data %>%
   group_by(sample_name, gene_name) %>%
   mutate(count = n()) %>%
-  filter(count <= MAX_NUMBER_OF_SNPS) %>%
+  filter(count <= MAX_NUMBER_OF_SNPS_PER_SAMPLE) %>%
   select(-count)
+
+#TODO: assign value of 0 when no SNP is found but gene does belong to sample
 ```
 
 Pivot table with above specifications:
