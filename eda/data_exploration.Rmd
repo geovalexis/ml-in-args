@@ -154,7 +154,24 @@ args_data %>%
   theme_bw()
 ```
 
-\#TODO: add analysis when final data is ready
+## Feature engineering
+
+As all of the columns we have in this table is boolean data, there is not much to do in terms of feature engineering. 
+Hoewever, we have noticed that there are some ARGs that does not contribute to resistance in any sample, that is, they 
+are always 0. Since this does not provide us any information, we will remove them from the table.
+
+```{r}
+# Check length of args_data columns
+original_ncols <- length(colnames(args_data))
+
+# Filter to only columns that has any other value different than 0
+args_data <- args_data %>%
+  select_if(function(x) any(x != 0))
+
+removed_ncols <- original_ncols - length(colnames(args_data))
+```
+
+After the filtering, we have removed `r removed_ncols` columns.
 
 ## SNPs
 
@@ -470,6 +487,56 @@ card_snps_data %>%
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
   labs(x = "Antibiotic", y = "Number of CARD SNPs")
 ```
+
+# Correlation analysis
+
+In the next section we will perform a correlation analysis between the different variables in the dataset and the multiple antibiotics. 
+
+```{r}
+# Prepate data for correlation analysis: Remove null values and sort data in same order
+arranged_amr_labels <- amr_labels %>%
+  drop_na() %>%
+  arrange(SampleID)
+arranged_args_data <- args_data %>%
+  filter(sample_name %in% arranged_amr_labels$`SampleID`) %>%
+  arrange(sample_name) %>%
+  select(-sample_name) %>%
+  select_if(function(x) any(x != 0))
+arranged_amr_labels <- arranged_amr_labels %>%
+  select(-`SampleID`)
+
+# Calculate correlation matrix and its p-values
+args_correlation_matrix_coefficients <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
+args_correlation_matrix_pvalues <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
+for (i in 1:ncol(arranged_args_data)) {
+  for (j in 1:ncol(arranged_amr_labels)) {
+    args_correlation_matrix_coefficients[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$estimate
+    args_correlation_matrix_pvalues[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$p.value
+  }
+}
+#TODO: analyze p-values to see if they are significant
+# args_correlation_matrix <- cor(arranged_args_data, arranged_amr_labels) # Alternative method to calculate correlation matrix with coefficients but not p-values
+
+# heatmap of correlation matrix
+heatmap(args_correlation_matrix_coefficients,
+  xlab = "Antibiotics", ylab = "Antibiotic Resistance Genes (ARGs)",
+  main = "Correlation Heatmap",
+  col = colorRampPalette(c("blue", "white", "red"))(100),
+  key = TRUE,
+  key.title = "Correlation Coefficients",
+  # Separate axis a bit more
+  margins = c(16, 6)
+)
+# Add gradient color legend
+legend("topleft",
+  legend = c("-1", "0", "1"),
+  fill = colorRampPalette(c("blue", "white", "red"))(3),
+  title = "Correlation Coefficient",
+  cex = 0.8
+)
+
+```
+
 
 # Save data
 
