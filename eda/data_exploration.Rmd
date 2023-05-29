@@ -53,7 +53,7 @@ snps_data
 
 ```{r}
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch2", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", "_batch2.5", ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 # Fix/extract name of samples
 card_data <- card_data %>%
@@ -566,7 +566,7 @@ snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
 
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2.5", "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 

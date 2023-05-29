@@ -162,7 +162,7 @@ snps_data
 
 ``` r
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch2", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", "_batch2.5", ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 ```
 
@@ -171,12 +171,12 @@ card_data <- read_tsv(card_data_filepath, na = c("n/a"))
     ##   dat <- vroom(...)
     ##   problems(dat)
 
-    ## Rows: 19488 Columns: 27
+    ## Rows: 120203 Columns: 27
     ## -- Column specification --------------------------------------------------------
     ## Delimiter: "\t"
-    ## chr (17): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
+    ## chr (16): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
     ## dbl  (9): TAX_ID, Start, Stop, Pass_Bitscore, Best_Hit_Bitscore, Best_Identi...
-    ## lgl  (1): Nudged
+    ## lgl  (2): Other_SNPs, Nudged
     ## 
     ## i Use `spec()` to retrieve the full column specification for this data.
     ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -188,7 +188,7 @@ card_data <- card_data %>%
 card_data
 ```
 
-    ## # A tibble: 19,488 x 27
+    ## # A tibble: 120,203 x 27
     ##    TAX_ID SAMPLE_ID  ORF_ID Contig  Start   Stop Orien~1 Cut_Off Pass_~2 Best_~3
     ##     <dbl> <chr>      <chr>  <chr>   <dbl>  <dbl> <chr>   <chr>     <dbl>   <dbl>
     ##  1    195 GCA_00528~ AACMV~ AACMV~  40782  41555 +       Perfect     500    516.
@@ -201,9 +201,9 @@ card_data
     ##  8    195 GCA_00528~ AACMR~ AACMR~   3297   5216 +       Strict      300   1304.
     ##  9    195 GCA_00528~ AACMR~ AACMR~   2577   3350 +       Perfect     500    516.
     ## 10    197 GCA_00529~ AACNR~ AACNR~  20452  21225 -       Perfect     500    516.
-    ## # ... with 19,478 more rows, 17 more variables: Best_Hit_ARO <chr>,
+    ## # ... with 120,193 more rows, 17 more variables: Best_Hit_ARO <chr>,
     ## #   Best_Identities <dbl>, ARO <dbl>, Model_type <chr>,
-    ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <chr>, `Drug Class` <chr>,
+    ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <lgl>, `Drug Class` <chr>,
     ## #   `Resistance Mechanism` <chr>, `AMR Gene Family` <chr>, Predicted_DNA <chr>,
     ## #   Predicted_Protein <chr>, CARD_Protein_Sequence <chr>,
     ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <dbl>,
@@ -977,7 +977,7 @@ snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
 
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2.5", "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 
