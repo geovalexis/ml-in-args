@@ -24,7 +24,7 @@ concurrency:
 jobs:
 
   build:
-    name: Render rmarkdown documents
+    name: Render markdown documents
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

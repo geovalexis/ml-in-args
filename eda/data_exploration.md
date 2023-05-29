@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 27, 2023
+May 29, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -15,26 +15,28 @@ May 27, 2023
       id="toc-411-null-values-detection">4.1.1 Null values detection</a>
     - <a href="#412-outliers-detection" id="toc-412-outliers-detection">4.1.2
       Outliers detection</a>
-  - <a href="#42-feature-engineering" id="toc-42-feature-engineering">4.2
-    Feature engineering</a>
-  - <a href="#43-snps" id="toc-43-snps">4.3 SNPs</a>
-    - <a href="#431-preparation" id="toc-431-preparation">4.3.1
+    - <a href="#413-feature-engineering"
+      id="toc-413-feature-engineering">4.1.3 Feature engineering</a>
+  - <a href="#42-snps" id="toc-42-snps">4.2 SNPs</a>
+    - <a href="#421-preparation" id="toc-421-preparation">4.2.1
       Preparation</a>
-    - <a href="#432-null-values-detection"
-      id="toc-432-null-values-detection">4.3.2 Null values detection</a>
-    - <a href="#433-outliers-analysis" id="toc-433-outliers-analysis">4.3.3
+    - <a href="#422-null-values-detection"
+      id="toc-422-null-values-detection">4.2.2 Null values detection</a>
+    - <a href="#423-outliers-analysis" id="toc-423-outliers-analysis">4.2.3
       Outliers analysis</a>
-  - <a href="#44-snps-from-card" id="toc-44-snps-from-card">4.4 SNPs from
+  - <a href="#43-snps-from-card" id="toc-43-snps-from-card">4.3 SNPs from
     CARD</a>
-  - <a href="#45-filtering" id="toc-45-filtering">4.5 Filtering</a>
-  - <a href="#46-explorationvisualization"
-    id="toc-46-explorationvisualization">4.6 Exploration/Visualization</a>
-  - <a href="#47-preparation" id="toc-47-preparation">4.7 Preparation</a>
-  - <a href="#48-amr-labels" id="toc-48-amr-labels">4.8 AMR labels</a>
-    - <a href="#481-preparation" id="toc-481-preparation">4.8.1
+    - <a href="#431-filtering" id="toc-431-filtering">4.3.1 Filtering</a>
+    - <a href="#432-explorationvisualization"
+      id="toc-432-explorationvisualization">4.3.2
+      Exploration/Visualization</a>
+    - <a href="#433-preparation" id="toc-433-preparation">4.3.3
       Preparation</a>
-    - <a href="#482-cleaning" id="toc-482-cleaning">4.8.2 Cleaning</a>
-    - <a href="#483-exploration" id="toc-483-exploration">4.8.3
+  - <a href="#44-amr-labels" id="toc-44-amr-labels">4.4 AMR labels</a>
+    - <a href="#441-preparation" id="toc-441-preparation">4.4.1
+      Preparation</a>
+    - <a href="#442-cleaning" id="toc-442-cleaning">4.4.2 Cleaning</a>
+    - <a href="#443-exploration" id="toc-443-exploration">4.4.3
       Exploration</a>
 - <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
 - <a href="#6-correlation-analysis" id="toc-6-correlation-analysis">6
@@ -160,7 +162,7 @@ snps_data
 
 ``` r
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch1", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", "_batch2", ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 ```
 
@@ -169,12 +171,12 @@ card_data <- read_tsv(card_data_filepath, na = c("n/a"))
     ##   dat <- vroom(...)
     ##   problems(dat)
 
-    ## Rows: 8120 Columns: 27
+    ## Rows: 19488 Columns: 27
     ## -- Column specification --------------------------------------------------------
     ## Delimiter: "\t"
-    ## chr (16): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
+    ## chr (17): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
     ## dbl  (9): TAX_ID, Start, Stop, Pass_Bitscore, Best_Hit_Bitscore, Best_Identi...
-    ## lgl  (2): Other_SNPs, Nudged
+    ## lgl  (1): Nudged
     ## 
     ## i Use `spec()` to retrieve the full column specification for this data.
     ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -186,7 +188,7 @@ card_data <- card_data %>%
 card_data
 ```
 
-    ## # A tibble: 8,120 x 27
+    ## # A tibble: 19,488 x 27
     ##    TAX_ID SAMPLE_ID  ORF_ID Contig  Start   Stop Orien~1 Cut_Off Pass_~2 Best_~3
     ##     <dbl> <chr>      <chr>  <chr>   <dbl>  <dbl> <chr>   <chr>     <dbl>   <dbl>
     ##  1    195 GCA_00528~ AACMV~ AACMV~  40782  41555 +       Perfect     500    516.
@@ -199,9 +201,9 @@ card_data
     ##  8    195 GCA_00528~ AACMR~ AACMR~   3297   5216 +       Strict      300   1304.
     ##  9    195 GCA_00528~ AACMR~ AACMR~   2577   3350 +       Perfect     500    516.
     ## 10    197 GCA_00529~ AACNR~ AACNR~  20452  21225 -       Perfect     500    516.
-    ## # ... with 8,110 more rows, 17 more variables: Best_Hit_ARO <chr>,
+    ## # ... with 19,478 more rows, 17 more variables: Best_Hit_ARO <chr>,
     ## #   Best_Identities <dbl>, ARO <dbl>, Model_type <chr>,
-    ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <lgl>, `Drug Class` <chr>,
+    ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <chr>, `Drug Class` <chr>,
     ## #   `Resistance Mechanism` <chr>, `AMR Gene Family` <chr>, Predicted_DNA <chr>,
     ## #   Predicted_Protein <chr>, CARD_Protein_Sequence <chr>,
     ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <dbl>,
@@ -426,7 +428,7 @@ args_data %>%
 
 ![](figures/unnamed-chunk-11-1.png)<!-- -->
 
-## 4.2 Feature engineering
+### 4.1.3 Feature engineering
 
 As all of the columns we have in this table is boolean data, there is
 not much to do in terms of feature engineering. Hoewever, we have
@@ -447,9 +449,9 @@ removed_ncols <- original_ncols - length(colnames(args_data))
 
 After the filtering, we have removed 17 columns.
 
-## 4.3 SNPs
+## 4.2 SNPs
 
-### 4.3.1 Preparation
+### 4.2.1 Preparation
 
 In this case, we will need to perform preparation steps for each sample,
 since the table has a different structure.
@@ -549,7 +551,7 @@ snps_data_wide <- snps_data_wide %>%
   mutate(across(-c(sample_name), ~ as.numeric(snp_2_num[.x])))
 ```
 
-### 4.3.2 Null values detection
+### 4.2.2 Null values detection
 
 ``` r
 # Count number of nulls per sample in percentage
@@ -577,7 +579,7 @@ snps_data_wide %>%
 For most of the samples, there is very little coocurrences in terms of
 SNPs.
 
-### 4.3.3 Outliers analysis
+### 4.2.3 Outliers analysis
 
 ``` r
 # For each sample, how many SNPs are present?
@@ -624,14 +626,14 @@ snps_data_wide %>%
 
 ![](figures/unnamed-chunk-20-1.png)<!-- -->
 
-## 4.4 SNPs from CARD
+## 4.3 SNPs from CARD
 
 Although [CARD database](https://card.mcmaster.ca/) offers us a large
 variety of information about AMR vectors, we will only use the SNPs
 information. For more information about the output format, please refer
 to the official [documentation](https://github.com/arpcard/rgi#id72).
 
-## 4.5 Filtering
+### 4.3.1 Filtering
 
 We will be filtering by the following criteria: \* Column `Model_type`
 must be either `protein variant model` or `protein overexpression model`
@@ -653,7 +655,7 @@ card_snps_data <- card_snps_data %>%
   unnest(SNPs_in_Best_Hit_ARO)
 ```
 
-## 4.6 Exploration/Visualization
+### 4.3.2 Exploration/Visualization
 
 ``` r
 # Boxplot showing how many SNPs are present in each sample
@@ -668,7 +670,7 @@ card_snps_data %>%
 
 ![](figures/unnamed-chunk-22-1.png)<!-- -->
 
-## 4.7 Preparation
+### 4.3.3 Preparation
 
 Now that we have filtered the data, we will need to transform it into a
 format compatible for ML algorithms, that is, a table with the features
@@ -691,7 +693,7 @@ card_snps_data_wide <- card_snps_data %>%
     ## `summarise()` has grouped output by 'SAMPLE_ID'. You can override using the
     ## `.groups` argument.
 
-## 4.8 AMR labels
+## 4.4 AMR labels
 
 The structure of this table is as follows:
 
@@ -709,7 +711,7 @@ sample. The values of each cell can be:
 One sample can be resistant to multiple antibiotics, so we can have
 multiple 1s in the same row.
 
-### 4.8.1 Preparation
+### 4.4.1 Preparation
 
 Adapt data so it has the same sampleIds as ARGS and variant calling
 data. AMR labes happens to have the biosamples accession numbers as
@@ -725,7 +727,7 @@ amr_labels <- amr_labels %>%
   select(SampleID, everything())
 ```
 
-### 4.8.2 Cleaning
+### 4.4.2 Cleaning
 
 We will remove those antibiotics with more than 30% of null values.
 
@@ -773,7 +775,7 @@ amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
 ```
 
-### 4.8.3 Exploration
+### 4.4.3 Exploration
 
 Count how many samples are resistance to each antibiotic:
 
@@ -945,7 +947,7 @@ snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
 
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch1", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2", "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 

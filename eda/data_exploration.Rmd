@@ -53,7 +53,7 @@ snps_data
 
 ```{r}
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch1", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", "_batch2", ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 # Fix/extract name of samples
 card_data <- card_data %>%
@@ -154,7 +154,7 @@ args_data %>%
   theme_bw()
 ```
 
-## Feature engineering
+### Feature engineering
 
 As all of the columns we have in this table is boolean data, there is not much to do in terms of feature engineering. 
 Hoewever, we have noticed that there are some ARGs that does not contribute to resistance in any sample, that is, they 
@@ -309,7 +309,7 @@ snps_data_wide %>%
 Although [CARD database](https://card.mcmaster.ca/) offers us a large variety of information about AMR vectors, we will only use the SNPs information. 
 For more information about the output format, please refer to the official [documentation](https://github.com/arpcard/rgi#id72).
 
-## Filtering
+### Filtering
 
 We will be filtering by the following criteria:
   * Column `Model_type` must be either `protein variant model` or `protein overexpression model`
@@ -330,7 +330,7 @@ card_snps_data <- card_snps_data %>%
   unnest(SNPs_in_Best_Hit_ARO)
 ```
 
-## Exploration/Visualization
+### Exploration/Visualization
 
 ```{r}
 # Boxplot showing how many SNPs are present in each sample
@@ -343,7 +343,7 @@ card_snps_data %>%
   theme_bw()
 ```
 
-## Preparation
+### Preparation
 
 Now that we have filtered the data, we will need to transform it into a format compatible for ML algorithms, that is, a table with the features of interest as columns and the samples as rows.
 In this case, the features we are interested in are the SNPs, so we will need to pivot the table so that each row represents a sample and each column represents a SNP ID (column `SNPs_in_Best_Hit_ARO`).
@@ -545,7 +545,7 @@ snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
 
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch1", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2", "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 
