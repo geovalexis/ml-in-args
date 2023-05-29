@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - rgi==6.0.2
+#NOTE:  For M1 Macs, there might be some problems using the multiprocessing library.
+#       If so, modify the line <path_to_env>/lib/python3.8/multiprocessing/context.py:224
+#       by adding "fork" within the `get_context` call.
+#       Refs: https://stackoverflow.com/questions/67999589/multiprocessing-with-pool-throws-error-on-m1-macbook

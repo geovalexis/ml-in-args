@@ -52,6 +52,16 @@ snps_data
 ```
 
 ```{r}
+# Results from CARD database
+card_data_filepath <- paste0("data/results/card/card_results", "_batch1", ".tsv")
+card_data <- read_tsv(card_data_filepath, na = c("n/a"))
+# Fix/extract name of samples
+card_data <- card_data %>%
+  mutate(SAMPLE_ID = str_extract(SAMPLE_ID, "^\\w+.\\d+"))
+card_data
+```
+
+```{r}
 # Reference genomes (in BED format)
 
 ## Loop through reference genomes folder and read BED files
@@ -85,6 +95,8 @@ amr_labels <- amr_labels %>%
   filter(`SampleID` %in% samples_metadata$biosample_accession)
 snps_data <- snps_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
+card_data <- card_data %>%
+  filter(SAMPLE_ID %in% samples_metadata$assembly_accession)
 args_data <- args_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
 ```
@@ -275,6 +287,61 @@ snps_data_wide %>%
   theme_bw()
 ```
 
+## SNPs from CARD
+
+Although [CARD database](https://card.mcmaster.ca/) offers us a large variety of information about AMR vectors, we will only use the SNPs information. 
+For more information about the output format, please refer to the official [documentation](https://github.com/arpcard/rgi#id72).
+
+## Filtering
+
+We will be filtering by the following criteria:
+  * Column `Model_type` must be either `protein variant model` or `protein overexpression model`
+  * They must have a value within the column `SNPs_in_Best_Hit_ARO`. NOTE: this column can have multiple values separated by commas.
+
+```{r}	
+# Filter by Model_type
+card_snps_data <- card_data %>%
+  filter(Model_type %in% c("protein variant model", "protein overexpression model"))
+
+# Filter by SNPs_in_Best_Hit_ARO
+card_snps_data <- card_snps_data %>%
+  filter(!is.na(SNPs_in_Best_Hit_ARO))
+
+# Explode SNPs_in_Best_Hit_ARO
+card_snps_data <- card_snps_data %>%
+  mutate(SNPs_in_Best_Hit_ARO = strsplit(SNPs_in_Best_Hit_ARO, ",")) %>%
+  unnest(SNPs_in_Best_Hit_ARO)
+```
+
+## Exploration/Visualization
+
+```{r}
+# Boxplot showing how many SNPs are present in each sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  theme_bw()
+```
+
+## Preparation
+
+Now that we have filtered the data, we will need to transform it into a format compatible for ML algorithms, that is, a table with the features of interest as columns and the samples as rows.
+In this case, the features we are interested in are the SNPs, so we will need to pivot the table so that each row represents a sample and each column represents a SNP ID (column `SNPs_in_Best_Hit_ARO`).
+The value of each cell will be the number of times that the SNP appears in the sample.
+
+```{r}
+# Pivot table
+card_snps_data_wide <- card_snps_data %>%
+  select(SAMPLE_ID, SNPs_in_Best_Hit_ARO) %>%
+  group_by(SAMPLE_ID, SNPs_in_Best_Hit_ARO) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = SNPs_in_Best_Hit_ARO, values_from = count, values_fill = 0) %>%
+  ungroup()
+```
+
 ## AMR labels
 
 The structure of this table is as follows:
@@ -356,7 +423,7 @@ resistant_samples_per_antibiotic %>%
 Median number of resistant genes per antibiotic:
 
 ```{r}
-# Boxplot with mean number of resistant genes per antibiotic
+# Boxplot with median number of resistant genes per antibiotic
 args_data %>%
   mutate(n_args = rowSums(select(., -sample_name))) %>%
   select(sample_name, n_args) %>%
@@ -372,8 +439,8 @@ args_data %>%
 Median number of SNPs per antibiotic:
 
 ```{r}
-# Boxplot with mean number of SNPs per antibiotic
-# In this, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
+# Boxplot with median number of SNPs per antibiotic
+# In this case, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
 snps_data %>%
   ungroup() %>%
   select(sample_name) %>%
@@ -388,12 +455,32 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
+Median number of CARD SNPs per antibiotic:
+
+```{r}
+# Boxplot with median number of CARD SNPs per antibiotic
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_card_snps = n()) %>%
+  left_join(amr_labels, by = c("SAMPLE_ID" = "SampleID")) %>%
+  pivot_longer(cols = -c(SAMPLE_ID, n_card_snps), names_to = "antibiotic", values_to = "resistant") %>%
+  filter(resistant == 1) %>%
+  ggplot(aes(x = antibiotic, y = n_card_snps, color = antibiotic)) +
+  geom_boxplot() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of CARD SNPs")
+```
+
 # Save data
 
 ```{r}
 snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
 snps_data_wide %>%
   write_tsv(snps_data_output_path)
+
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch1", "_cleaned.tsv")
+card_snps_data_wide %>%
+  write_tsv(card_snps_data_output_path)
 
 args_data_output_path <- paste0("data/results/args_calling/args_data", batch_number, "_cleaned.tsv")
 args_data %>%

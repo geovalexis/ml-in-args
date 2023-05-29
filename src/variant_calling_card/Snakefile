@@ -1,0 +1,96 @@
+configfile: "../config.yaml"
+
+species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
+samples_by_specie = {
+    specie.name: [os.path.splitext(sample.name)[0] for sample in os.scandir(specie) if sample.name.endswith(".fna")] 
+    for specie in species_paths
+}
+
+latest_card_db_version = "3.2.6"
+latest_wildcard_db_version = "4.0.0" #TODO: get version number from latest CARD release
+
+final_tsv_output = "results/card_results.tsv"
+
+rule all:
+    input:
+        ["results/{specie_id}/{sample}.txt.processed".format(specie_id=specie_id, sample=sample)  
+        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
+
+
+rule download_card_database:
+    output:
+        directory("database")
+    conda:
+        "envs/card.yaml"
+    shell:
+        """
+        mkdir -p database
+        echo "\nDownloading CARD Reference data..."
+        curl -o database/card_db.tar.gz https://card.mcmaster.ca/latest/data
+        tar -xvf database/card_db.tar.gz ./card.json
+        mv card.json database/card.json
+        rm database/card_db.tar.gz
+        echo "\nDownloading CARD Wildcard data..."
+        curl -o database/wildcard_data.tar.bz2 https://card.mcmaster.ca/latest/variants
+        mkdir -p database/wildcard
+        echo "Extracting CARD Wildcard data..."
+        tar -xjf database/wildcard_data.tar.bz2 -C database/wildcard
+        gunzip database/wildcard/*.gz
+        echo "\nCreating FASTA reference files..."
+        rgi card_annotation -i database/card.json
+        rgi wildcard_annotation -i database/wildcard --card_json database/card.json -v {latest_wildcard_db_version}
+        mv card_database* database/
+        mv wildcard_database* database/
+        """
+
+rule load_card_database:
+    input:
+        "database"
+    output:
+        directory("localDB")
+    conda:
+        "envs/card.yaml"
+    shell:
+        """
+        rgi clean --local
+        rgi load \
+        --card_json database/card.json \
+        --card_annotation database/card_database_v{latest_card_db_version}_all.fasta \
+        --card_annotation_all_models database/card_database_v{latest_card_db_version}_all.fasta \
+        --wildcard_annotation database/wildcard_database_v{latest_wildcard_db_version}.fasta \
+        --wildcard_annotation_all_models database/wildcard_database_v{latest_wildcard_db_version}_all.fasta \
+        --wildcard_index database/wildcard/index-for-model-sequences.txt \
+        --wildcard_version {latest_wildcard_db_version} \
+        --local --debug
+        """
+
+rule compute_args_and_variants:
+    input:
+        fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna",
+        loaded_card_db="localDB"
+    output:
+        "results/{specie_id}/{sample}.json",
+        "results/{specie_id}/{sample}.txt"
+    conda:
+        "envs/card.yaml"
+    shell:
+        """
+        rgi main --input_sequence {input.fasta} --output_file results/{wildcards.specie_id}/{wildcards.sample} --clean --num_threads {threads} --local --debug
+        """
+
+rule concat_tsv_samples:
+    input:
+        "results/{specie_id}/{sample}.txt"
+    output:
+        "results/{specie_id}/{sample}.txt.processed",
+    shell:
+        """
+        # If final output does not exist yet, create it and add header
+        if [ ! -f {final_tsv_output} ]; then
+            echo -e "TAX_ID\tSAMPLE_ID\tORF_ID\tContig\tStart\tStop\tOrientation\tCut_Off\tPass_Bitscore\tBest_Hit_Bitscore\tBest_Hit_ARO\tBest_Identities\tARO\tModel_type\tSNPs_in_Best_Hit_ARO\tOther_SNPs\tDrug Class\tResistance Mechanism\tAMR Gene Family\tPredicted_DNA\tPredicted_Protein\tCARD_Protein_Sequence\tPercentage Length of Reference Sequence\tID\tModel_ID\tNudged\tNote" > {final_tsv_output}
+        fi
+        # Append results
+        awk -v taxid="{wildcards.specie_id}" -v sample_name="{wildcards.sample}" -F'\t' -v OFS='\t' '{{ print taxid, sample_name, $0 }}' "{input}" \
+        | tail -n +2 >> {final_tsv_output}
+        touch {output}
+        """
