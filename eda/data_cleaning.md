@@ -1,4 +1,4 @@
-Data exploration
+Data Cleaning
 ================
 Geovanny Risco
 May 30, 2023
@@ -39,9 +39,7 @@ May 30, 2023
     - <a href="#443-exploration" id="toc-443-exploration">4.4.3
       Exploration</a>
 - <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
-- <a href="#6-correlation-analysis" id="toc-6-correlation-analysis">6
-  Correlation analysis</a>
-- <a href="#7-save-data" id="toc-7-save-data">7 Save data</a>
+- <a href="#6-save-data" id="toc-6-save-data">6 Save data</a>
 
 # 1 Import libraries
 
@@ -904,73 +902,7 @@ card_snps_data %>%
 
 ![](figures/unnamed-chunk-32-1.png)<!-- -->
 
-# 6 Correlation analysis
-
-In the next section we will perform a correlation analysis between the
-different variables in the dataset and the multiple antibiotics.
-
-``` r
-# Prepate data for correlation analysis: Remove null values and sort data in same order
-arranged_amr_labels <- amr_labels %>%
-  drop_na() %>%
-  arrange(SampleID)
-arranged_args_data <- args_data %>%
-  filter(sample_name %in% arranged_amr_labels$`SampleID`) %>%
-  arrange(sample_name) %>%
-  select(-sample_name) %>%
-  select_if(function(x) any(x != 0))
-arranged_amr_labels <- arranged_amr_labels %>%
-  select(-`SampleID`)
-
-# Calculate correlation matrix and its p-values
-args_correlation_matrix_coefficients <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
-args_correlation_matrix_pvalues <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
-for (i in 1:ncol(arranged_args_data)) {
-  for (j in 1:ncol(arranged_amr_labels)) {
-    args_correlation_matrix_coefficients[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$estimate
-    args_correlation_matrix_pvalues[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$p.value
-  }
-}
-#TODO: analyze p-values to see if they are significant
-# args_correlation_matrix <- cor(arranged_args_data, arranged_amr_labels) # Alternative method to calculate correlation matrix with coefficients but not p-values
-
-# heatmap of correlation matrix
-heatmap(args_correlation_matrix_coefficients,
-  xlab = "Antibiotics", ylab = "Antibiotic Resistance Genes (ARGs)",
-  main = "Correlation Heatmap",
-  col = colorRampPalette(c("blue", "white", "red"))(100),
-  key = TRUE,
-  key.title = "Correlation Coefficients",
-  # Separate axis a bit more
-  margins = c(16, 6)
-)
-```
-
-    ## Warning in plot.window(...): "key" is not a graphical parameter
-
-    ## Warning in plot.window(...): "key.title" is not a graphical parameter
-
-    ## Warning in plot.xy(xy, type, ...): "key" is not a graphical parameter
-
-    ## Warning in plot.xy(xy, type, ...): "key.title" is not a graphical parameter
-
-    ## Warning in title(...): "key" is not a graphical parameter
-
-    ## Warning in title(...): "key.title" is not a graphical parameter
-
-``` r
-# Add gradient color legend
-legend("topleft",
-  legend = c("-1", "0", "1"),
-  fill = colorRampPalette(c("blue", "white", "red"))(3),
-  title = "Correlation Coefficient",
-  cex = 0.8
-)
-```
-
-![](figures/unnamed-chunk-33-1.png)<!-- -->
-
-# 7 Save data
+# 6 Save data
 
 ``` r
 snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
