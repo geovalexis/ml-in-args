@@ -25,12 +25,12 @@ jobs:
 
   build:
     name: Render rmarkdown documents
-    runs-on: ubuntu-latest
+    runs-on: macOS-latest
     steps:
       - name: Set up Git repository
         uses: actions/checkout@v3
       - name: Set up R with pandoc
-        uses: r-lib/actions/setup-pandoc@v1
+        uses: r-lib/actions/setup-pandoc@v2
       - name: Install rmarkdown
         run: Rscript -e 'install.packages("rmarkdown")'
       - name: Render README
