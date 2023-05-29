@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 29, 2023
+May 30, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -423,10 +423,26 @@ args_data %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of resistance genes", title = "Distribution of resistance genes per sample") +
-  theme_bw()
+  theme_classic()
 ```
 
 ![](figures/unnamed-chunk-11-1.png)<!-- -->
+
+``` r
+# Histogram with density of resistance genes per sample
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  ggplot(aes(x = count)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of resistance genes", y = "Density", title = "Distribution of resistance genes per sample") +
+  theme_classic()
+```
+
+    ## Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.
+    ## i Please use `after_stat(density)` instead.
+
+![](figures/unnamed-chunk-11-2.png)<!-- -->
 
 ### 4.1.3 Feature engineering
 
@@ -621,7 +637,7 @@ snps_data_wide %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
-  theme_bw()
+  theme_classic()
 ```
 
 ![](figures/unnamed-chunk-20-1.png)<!-- -->
@@ -665,10 +681,24 @@ card_snps_data %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
-  theme_bw()
+  theme_classic()
 ```
 
 ![](figures/unnamed-chunk-22-1.png)<!-- -->
+
+``` r
+# Histogram showing how many SNPs are present in each sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = count)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of SNPs", y = "Density", title = "Distribution of SNPs per sample") +
+  theme_classic()
+```
+
+![](figures/unnamed-chunk-23-1.png)<!-- -->
 
 ### 4.3.3 Preparation
 
@@ -813,7 +843,7 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-28-1.png)<!-- -->
+![](figures/unnamed-chunk-29-1.png)<!-- -->
 
 # 5 Explore data
 
@@ -833,7 +863,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-29-1.png)<!-- -->
+![](figures/unnamed-chunk-30-1.png)<!-- -->
 
 Median number of SNPs per antibiotic:
 
@@ -854,7 +884,7 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
-![](figures/unnamed-chunk-30-1.png)<!-- -->
+![](figures/unnamed-chunk-31-1.png)<!-- -->
 
 Median number of CARD SNPs per antibiotic:
 
@@ -872,7 +902,7 @@ card_snps_data %>%
   labs(x = "Antibiotic", y = "Number of CARD SNPs")
 ```
 
-![](figures/unnamed-chunk-31-1.png)<!-- -->
+![](figures/unnamed-chunk-32-1.png)<!-- -->
 
 # 6 Correlation analysis
 
@@ -938,7 +968,7 @@ legend("topleft",
 )
 ```
 
-![](figures/unnamed-chunk-32-1.png)<!-- -->
+![](figures/unnamed-chunk-33-1.png)<!-- -->
 
 # 7 Save data
 

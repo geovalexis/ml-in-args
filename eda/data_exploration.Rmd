@@ -151,7 +151,15 @@ args_data %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of resistance genes", title = "Distribution of resistance genes per sample") +
-  theme_bw()
+  theme_classic()
+# Histogram with density of resistance genes per sample
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  ggplot(aes(x = count)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of resistance genes", y = "Density", title = "Distribution of resistance genes per sample") +
+  theme_classic()
 ```
 
 ### Feature engineering
@@ -301,7 +309,7 @@ snps_data_wide %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
-  theme_bw()
+  theme_classic()
 ```
 
 ## SNPs from CARD
@@ -340,8 +348,21 @@ card_snps_data %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
   labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
-  theme_bw()
+  theme_classic()
 ```
+
+```{r}
+# Histogram showing how many SNPs are present in each sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = count)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of SNPs", y = "Density", title = "Distribution of SNPs per sample") +
+  theme_classic()
+```
+
 
 ### Preparation
 
