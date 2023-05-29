@@ -1,7 +1,7 @@
 Data exploration
 ================
 Geovanny Risco
-May 26, 2023
+May 27, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -15,27 +15,31 @@ May 26, 2023
       id="toc-411-null-values-detection">4.1.1 Null values detection</a>
     - <a href="#412-outliers-detection" id="toc-412-outliers-detection">4.1.2
       Outliers detection</a>
-  - <a href="#42-snps" id="toc-42-snps">4.2 SNPs</a>
-    - <a href="#421-preparation" id="toc-421-preparation">4.2.1
+  - <a href="#42-feature-engineering" id="toc-42-feature-engineering">4.2
+    Feature engineering</a>
+  - <a href="#43-snps" id="toc-43-snps">4.3 SNPs</a>
+    - <a href="#431-preparation" id="toc-431-preparation">4.3.1
       Preparation</a>
-    - <a href="#422-null-values-detection"
-      id="toc-422-null-values-detection">4.2.2 Null values detection</a>
-    - <a href="#423-outliers-analysis" id="toc-423-outliers-analysis">4.2.3
+    - <a href="#432-null-values-detection"
+      id="toc-432-null-values-detection">4.3.2 Null values detection</a>
+    - <a href="#433-outliers-analysis" id="toc-433-outliers-analysis">4.3.3
       Outliers analysis</a>
-  - <a href="#43-snps-from-card" id="toc-43-snps-from-card">4.3 SNPs from
+  - <a href="#44-snps-from-card" id="toc-44-snps-from-card">4.4 SNPs from
     CARD</a>
-  - <a href="#44-filtering" id="toc-44-filtering">4.4 Filtering</a>
-  - <a href="#45-explorationvisualization"
-    id="toc-45-explorationvisualization">4.5 Exploration/Visualization</a>
-  - <a href="#46-preparation" id="toc-46-preparation">4.6 Preparation</a>
-  - <a href="#47-amr-labels" id="toc-47-amr-labels">4.7 AMR labels</a>
-    - <a href="#471-preparation" id="toc-471-preparation">4.7.1
+  - <a href="#45-filtering" id="toc-45-filtering">4.5 Filtering</a>
+  - <a href="#46-explorationvisualization"
+    id="toc-46-explorationvisualization">4.6 Exploration/Visualization</a>
+  - <a href="#47-preparation" id="toc-47-preparation">4.7 Preparation</a>
+  - <a href="#48-amr-labels" id="toc-48-amr-labels">4.8 AMR labels</a>
+    - <a href="#481-preparation" id="toc-481-preparation">4.8.1
       Preparation</a>
-    - <a href="#472-cleaning" id="toc-472-cleaning">4.7.2 Cleaning</a>
-    - <a href="#473-exploration" id="toc-473-exploration">4.7.3
+    - <a href="#482-cleaning" id="toc-482-cleaning">4.8.2 Cleaning</a>
+    - <a href="#483-exploration" id="toc-483-exploration">4.8.3
       Exploration</a>
 - <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
-- <a href="#6-save-data" id="toc-6-save-data">6 Save data</a>
+- <a href="#6-correlation-analysis" id="toc-6-correlation-analysis">6
+  Correlation analysis</a>
+- <a href="#7-save-data" id="toc-7-save-data">7 Save data</a>
 
 # 1 Import libraries
 
@@ -422,11 +426,30 @@ args_data %>%
 
 ![](figures/unnamed-chunk-11-1.png)<!-- -->
 
-\#TODO: add analysis when final data is ready
+## 4.2 Feature engineering
 
-## 4.2 SNPs
+As all of the columns we have in this table is boolean data, there is
+not much to do in terms of feature engineering. Hoewever, we have
+noticed that there are some ARGs that does not contribute to resistance
+in any sample, that is, they are always 0. Since this does not provide
+us any information, we will remove them from the table.
 
-### 4.2.1 Preparation
+``` r
+# Check length of args_data columns
+original_ncols <- length(colnames(args_data))
+
+# Filter to only columns that has any other value different than 0
+args_data <- args_data %>%
+  select_if(function(x) any(x != 0))
+
+removed_ncols <- original_ncols - length(colnames(args_data))
+```
+
+After the filtering, we have removed 17 columns.
+
+## 4.3 SNPs
+
+### 4.3.1 Preparation
 
 In this case, we will need to perform preparation steps for each sample,
 since the table has a different structure.
@@ -526,7 +549,7 @@ snps_data_wide <- snps_data_wide %>%
   mutate(across(-c(sample_name), ~ as.numeric(snp_2_num[.x])))
 ```
 
-### 4.2.2 Null values detection
+### 4.3.2 Null values detection
 
 ``` r
 # Count number of nulls per sample in percentage
@@ -554,7 +577,7 @@ snps_data_wide %>%
 For most of the samples, there is very little coocurrences in terms of
 SNPs.
 
-### 4.2.3 Outliers analysis
+### 4.3.3 Outliers analysis
 
 ``` r
 # For each sample, how many SNPs are present?
@@ -599,16 +622,16 @@ snps_data_wide %>%
   theme_bw()
 ```
 
-![](figures/unnamed-chunk-19-1.png)<!-- -->
+![](figures/unnamed-chunk-20-1.png)<!-- -->
 
-## 4.3 SNPs from CARD
+## 4.4 SNPs from CARD
 
 Although [CARD database](https://card.mcmaster.ca/) offers us a large
 variety of information about AMR vectors, we will only use the SNPs
 information. For more information about the output format, please refer
 to the official [documentation](https://github.com/arpcard/rgi#id72).
 
-## 4.4 Filtering
+## 4.5 Filtering
 
 We will be filtering by the following criteria: \* Column `Model_type`
 must be either `protein variant model` or `protein overexpression model`
@@ -630,7 +653,7 @@ card_snps_data <- card_snps_data %>%
   unnest(SNPs_in_Best_Hit_ARO)
 ```
 
-## 4.5 Exploration/Visualization
+## 4.6 Exploration/Visualization
 
 ``` r
 # Boxplot showing how many SNPs are present in each sample
@@ -643,9 +666,9 @@ card_snps_data %>%
   theme_bw()
 ```
 
-![](figures/unnamed-chunk-21-1.png)<!-- -->
+![](figures/unnamed-chunk-22-1.png)<!-- -->
 
-## 4.6 Preparation
+## 4.7 Preparation
 
 Now that we have filtered the data, we will need to transform it into a
 format compatible for ML algorithms, that is, a table with the features
@@ -668,7 +691,7 @@ card_snps_data_wide <- card_snps_data %>%
     ## `summarise()` has grouped output by 'SAMPLE_ID'. You can override using the
     ## `.groups` argument.
 
-## 4.7 AMR labels
+## 4.8 AMR labels
 
 The structure of this table is as follows:
 
@@ -686,7 +709,7 @@ sample. The values of each cell can be:
 One sample can be resistant to multiple antibiotics, so we can have
 multiple 1s in the same row.
 
-### 4.7.1 Preparation
+### 4.8.1 Preparation
 
 Adapt data so it has the same sampleIds as ARGS and variant calling
 data. AMR labes happens to have the biosamples accession numbers as
@@ -702,7 +725,7 @@ amr_labels <- amr_labels %>%
   select(SampleID, everything())
 ```
 
-### 4.7.2 Cleaning
+### 4.8.2 Cleaning
 
 We will remove those antibiotics with more than 30% of null values.
 
@@ -750,7 +773,7 @@ amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
 ```
 
-### 4.7.3 Exploration
+### 4.8.3 Exploration
 
 Count how many samples are resistance to each antibiotic:
 
@@ -788,7 +811,7 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-27-1.png)<!-- -->
+![](figures/unnamed-chunk-28-1.png)<!-- -->
 
 # 5 Explore data
 
@@ -808,7 +831,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-28-1.png)<!-- -->
+![](figures/unnamed-chunk-29-1.png)<!-- -->
 
 Median number of SNPs per antibiotic:
 
@@ -829,7 +852,7 @@ snps_data %>%
   labs(x = "Antibiotic", y = "Number of SNPs")
 ```
 
-![](figures/unnamed-chunk-29-1.png)<!-- -->
+![](figures/unnamed-chunk-30-1.png)<!-- -->
 
 Median number of CARD SNPs per antibiotic:
 
@@ -847,9 +870,75 @@ card_snps_data %>%
   labs(x = "Antibiotic", y = "Number of CARD SNPs")
 ```
 
-![](figures/unnamed-chunk-30-1.png)<!-- -->
+![](figures/unnamed-chunk-31-1.png)<!-- -->
 
-# 6 Save data
+# 6 Correlation analysis
+
+In the next section we will perform a correlation analysis between the
+different variables in the dataset and the multiple antibiotics.
+
+``` r
+# Prepate data for correlation analysis: Remove null values and sort data in same order
+arranged_amr_labels <- amr_labels %>%
+  drop_na() %>%
+  arrange(SampleID)
+arranged_args_data <- args_data %>%
+  filter(sample_name %in% arranged_amr_labels$`SampleID`) %>%
+  arrange(sample_name) %>%
+  select(-sample_name) %>%
+  select_if(function(x) any(x != 0))
+arranged_amr_labels <- arranged_amr_labels %>%
+  select(-`SampleID`)
+
+# Calculate correlation matrix and its p-values
+args_correlation_matrix_coefficients <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
+args_correlation_matrix_pvalues <- matrix(NA, nrow = ncol(arranged_args_data), ncol = ncol(arranged_amr_labels), dimnames = list(colnames(arranged_args_data), colnames(arranged_amr_labels)))
+for (i in 1:ncol(arranged_args_data)) {
+  for (j in 1:ncol(arranged_amr_labels)) {
+    args_correlation_matrix_coefficients[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$estimate
+    args_correlation_matrix_pvalues[i, j] <- cor.test(arranged_args_data[[i]], arranged_amr_labels[[j]])$p.value
+  }
+}
+#TODO: analyze p-values to see if they are significant
+# args_correlation_matrix <- cor(arranged_args_data, arranged_amr_labels) # Alternative method to calculate correlation matrix with coefficients but not p-values
+
+# heatmap of correlation matrix
+heatmap(args_correlation_matrix_coefficients,
+  xlab = "Antibiotics", ylab = "Antibiotic Resistance Genes (ARGs)",
+  main = "Correlation Heatmap",
+  col = colorRampPalette(c("blue", "white", "red"))(100),
+  key = TRUE,
+  key.title = "Correlation Coefficients",
+  # Separate axis a bit more
+  margins = c(16, 6)
+)
+```
+
+    ## Warning in plot.window(...): "key" is not a graphical parameter
+
+    ## Warning in plot.window(...): "key.title" is not a graphical parameter
+
+    ## Warning in plot.xy(xy, type, ...): "key" is not a graphical parameter
+
+    ## Warning in plot.xy(xy, type, ...): "key.title" is not a graphical parameter
+
+    ## Warning in title(...): "key" is not a graphical parameter
+
+    ## Warning in title(...): "key.title" is not a graphical parameter
+
+``` r
+# Add gradient color legend
+legend("topleft",
+  legend = c("-1", "0", "1"),
+  fill = colorRampPalette(c("blue", "white", "red"))(3),
+  title = "Correlation Coefficient",
+  cex = 0.8
+)
+```
+
+![](figures/unnamed-chunk-32-1.png)<!-- -->
+
+# 7 Save data
 
 ``` r
 snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
