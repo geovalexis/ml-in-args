@@ -25,7 +25,3 @@ Using genetic information from resistant bacteria, it is possible to model the c
 * Obtain more data from [BV-BRC](https://www.bv-brc.org/)
 * ARGs calling:
     * Use other ARGs identification tools such as [CARD](https://card.mcmaster.ca/) or [ARG-ANNOT](https://omictools.com/arg-annot-tool)
-* Variant calling:
-    * Take secondary mutations into account
-    * Encode TGT instead of only alternative allele as it provides more information (from what nucleotides the mutation comes from)
-    * Use one-hot-encoded instead of label encoding
