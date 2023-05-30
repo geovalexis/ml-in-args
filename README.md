@@ -8,7 +8,10 @@ Using genetic information from resistant bacteria, it is possible to model the c
 
 * `data/`: contains input data for the project (not all data is included in the repository due to size limitations)
 * `eda/`: Exploratory Data Analysis (EDA) of the input data
+    * [data_cleaning](https://geovalexis.github.io/ml-in-args/eda/data_cleaning): data cleaning and preparation of the input data for the ML models
+    * [correlation_analysis](https://geovalexis.github.io/ml-in-args/eda/correlation_analysis): correlation analysis between the different variables in the dataset
 * `ml/`: contains all the Machine Learning (ML) related work
+    * [ML_for_AMR_prediction](https://colab.research.google.com/github/geovalexis/ml-in-args/blob/master/ml/ML_for_AMR_prediction.ipynb): machine learning training and evaluation of different models to predict Antimicrobial Resistance (AMR)
 * `workflows/`: contains ETL workflows to obtain the input data for the project
     * `card`: identifies ARGs and SNPs present in the samples by [CARD](https://github.com/arpcard/rgi).
     * `data_collection_bvbrc/`: contains various scripts to retrieve the input data from [BV-BRC](https://www.bv-brc.org/) source
