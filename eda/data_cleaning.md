@@ -10,33 +10,27 @@ May 30, 2023
 - <a href="#3-import-data" id="toc-3-import-data">3 Import data</a>
 - <a href="#4-clean-and-prepare-data" id="toc-4-clean-and-prepare-data">4
   Clean and prepare data</a>
-  - <a href="#41-args" id="toc-41-args">4.1 ARGs</a>
+  - <a href="#41-args-from-resfinder" id="toc-41-args-from-resfinder">4.1
+    ARGs from Resfinder</a>
     - <a href="#411-null-values-detection"
       id="toc-411-null-values-detection">4.1.1 Null values detection</a>
     - <a href="#412-outliers-detection" id="toc-412-outliers-detection">4.1.2
       Outliers detection</a>
     - <a href="#413-feature-engineering"
       id="toc-413-feature-engineering">4.1.3 Feature engineering</a>
-  - <a href="#42-snps" id="toc-42-snps">4.2 SNPs</a>
-    - <a href="#421-preparation" id="toc-421-preparation">4.2.1
-      Preparation</a>
-    - <a href="#422-null-values-detection"
-      id="toc-422-null-values-detection">4.2.2 Null values detection</a>
-    - <a href="#423-outliers-analysis" id="toc-423-outliers-analysis">4.2.3
-      Outliers analysis</a>
-  - <a href="#43-snps-from-card" id="toc-43-snps-from-card">4.3 SNPs from
+  - <a href="#42-snps-from-card" id="toc-42-snps-from-card">4.2 SNPs from
     CARD</a>
-    - <a href="#431-filtering" id="toc-431-filtering">4.3.1 Filtering</a>
-    - <a href="#432-explorationvisualization"
-      id="toc-432-explorationvisualization">4.3.2
+    - <a href="#421-filtering" id="toc-421-filtering">4.2.1 Filtering</a>
+    - <a href="#422-explorationvisualization"
+      id="toc-422-explorationvisualization">4.2.2
       Exploration/Visualization</a>
-    - <a href="#433-preparation" id="toc-433-preparation">4.3.3
+    - <a href="#423-preparation" id="toc-423-preparation">4.2.3
       Preparation</a>
-  - <a href="#44-amr-labels" id="toc-44-amr-labels">4.4 AMR labels</a>
-    - <a href="#441-preparation" id="toc-441-preparation">4.4.1
+  - <a href="#43-amr-labels" id="toc-43-amr-labels">4.3 AMR labels</a>
+    - <a href="#431-preparation" id="toc-431-preparation">4.3.1
       Preparation</a>
-    - <a href="#442-cleaning" id="toc-442-cleaning">4.4.2 Cleaning</a>
-    - <a href="#443-exploration" id="toc-443-exploration">4.4.3
+    - <a href="#432-cleaning" id="toc-432-cleaning">4.3.2 Cleaning</a>
+    - <a href="#433-exploration" id="toc-433-exploration">4.3.3
       Exploration</a>
 - <a href="#5-explore-data" id="toc-5-explore-data">5 Explore data</a>
 - <a href="#6-save-data" id="toc-6-save-data">6 Save data</a>
@@ -79,7 +73,6 @@ library(tidyverse)
 
 ``` r
 batch_number <- "_batch3"
-MAX_NUMBER_OF_SNPS <- 10
 MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 ```
 
@@ -115,48 +108,6 @@ args_data
     ## #   `aph(6)-Ic` <dbl>, `aph(6)-Id` <dbl>, `blaCMY-2` <dbl>, `blaHERA-3` <dbl>,
     ## #   `blaOXA-184` <dbl>, `blaOXA-193` <dbl>, `blaOXA-448` <dbl>,
     ## #   `blaOXA-449` <dbl>, `blaOXA-450` <dbl>, `blaOXA-451` <dbl>, ...
-
-``` r
-# SNPs (Single Nucleotide Polymorphisms)
-snps_data_filepath <- paste0("data/results/variant_calling/snps_data", batch_number, ".tsv")
-snps_data <- read_tsv(snps_data_filepath, col_names = c("chrom", "pos", "ref", "alt", "tgt", "gene_name", "gene_pos", "tax_id", "sample_name"), na = c("."))
-```
-
-    ## Warning: One or more parsing issues, call `problems()` on your data frame for details,
-    ## e.g.:
-    ##   dat <- vroom(...)
-    ##   problems(dat)
-
-    ## Rows: 22136 Columns: 9
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (6): chrom, ref, alt, tgt, gene_name, sample_name
-    ## dbl (3): pos, gene_pos, tax_id
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-
-``` r
-# Fix/extract name of samples
-snps_data <- snps_data %>%
-  mutate(sample_name = str_extract(sample_name, "^\\w+.\\d+"))
-snps_data
-```
-
-    ## # A tibble: 22,136 x 9
-    ##    chrom             pos ref   alt   tgt   gene_name   gene_pos tax_id sample_~1
-    ##    <chr>           <dbl> <chr> <chr> <chr> <chr>          <dbl>  <dbl> <chr>    
-    ##  1 NZ_KB944666.1 2170478 A     G     A/G   WMS_RS13655      234   1351 1351.853 
-    ##  2 NZ_KB944666.1 2170481 C     T     C/T   WMS_RS13655      237   1351 1351.853 
-    ##  3 NZ_KB944666.1 2170493 T     C     T/C   WMS_RS13655      249   1351 1351.853 
-    ##  4 NZ_KB944666.1 2170505 T     G     T/G   WMS_RS13655      261   1351 1351.853 
-    ##  5 NZ_KB944666.1 2170514 G     A     G/A   WMS_RS13655      270   1351 1351.853 
-    ##  6 NZ_KB944666.1 2170548 A     G     A/G   WMS_RS13655      304   1351 1351.853 
-    ##  7 NZ_KB944666.1 2170556 C     T     C/T   WMS_RS13655      312   1351 1351.853 
-    ##  8 NZ_KB944666.1 2170559 T     C     T/C   WMS_RS13655      315   1351 1351.853 
-    ##  9 NZ_KB944666.1 2170562 C     G     C/G   WMS_RS13655      318   1351 1351.853 
-    ## 10 NZ_KB944666.1 2170571 A     G     A/G   WMS_RS13655      327   1351 1351.853 
-    ## # ... with 22,126 more rows, and abbreviated variable name 1: sample_name
 
 ``` r
 # Results from CARD database
@@ -324,8 +275,6 @@ to parse AMR labels information in a different way:
 ``` r
 amr_labels <- amr_labels %>%
   filter(`SampleID` %in% samples_metadata$biosample_accession)
-snps_data <- snps_data %>%
-  filter(sample_name %in% samples_metadata$assembly_accession)
 card_data <- card_data %>%
   filter(SAMPLE_ID %in% samples_metadata$assembly_accession)
 args_data <- args_data %>%
@@ -337,7 +286,7 @@ args_data <- args_data %>%
 First of all, we will need to clean and prepare the data in order to
 perform the analysis.
 
-## 4.1 ARGs
+## 4.1 ARGs from Resfinder
 
 This table has the following structure:
 
@@ -424,7 +373,7 @@ args_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-11-1.png)<!-- -->
+![](figures/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 # Histogram with density of resistance genes per sample
@@ -440,7 +389,7 @@ args_data %>%
     ## Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.
     ## i Please use `after_stat(density)` instead.
 
-![](figures/unnamed-chunk-11-2.png)<!-- -->
+![](figures/unnamed-chunk-10-2.png)<!-- -->
 
 ### 4.1.3 Feature engineering
 
@@ -463,191 +412,14 @@ removed_ncols <- original_ncols - length(colnames(args_data))
 
 After the filtering, we have removed 17 columns.
 
-## 4.2 SNPs
-
-### 4.2.1 Preparation
-
-In this case, we will need to perform preparation steps for each sample,
-since the table has a different structure.
-
-| chrom         | pos     | ref | alt | tgt | gene_name     | gene_pos | tax_id |     sample_name |
-|:--------------|:--------|:----|:----|:----|:--------------|:---------|:-------|----------------:|
-| NC_002695.2   | 1250767 | T   | C   | T/C | ECs_1169      | 511.0    | 562    | GCA_012688215.1 |
-| NC_002695.2   | 1250712 | C   | A   | C/A | ECs_1169      | 456.0    | 562    | GCA_012688215.1 |
-| NZ_CP046317.1 | 218754  | T   | G   | T/G | FOC43_RS01045 | 603      | 195    | GCA_005283725.1 |
-| …             | …       | …   | …   | …   | …             | …        | …      |               … |
-
-Here is a brief description of each column:
-
-- chrom: chromosome in which the SNP is located
-- pos: position of the SNP in the chromosome
-- ref: reference nucleotide (the one that is expected to be found in the
-  sample)
-- alt: alternative nucleotide (the one that is actually found in the
-  sample, that is, the mutation/SNP)
-- tgt: translated genotype, or in other words, the ref and alt
-  nucleotides in a single string (ref/alt). \#TODO: double check this
-- gene_name: name of the gene in which the SNP is located
-- gene_pos: position of the SNP in the gene
-- tax_id: taxonomic id of the sample
-- sample_name: name of the sample
-
-Most of this information has been extracted from the VCF file generated
-by the variant calling pipeline. More information about the VCF format
-can be found [here](https://samtools.github.io/hts-specs/VCFv4.2.pdf).
-
-In order to use this data for ML purposes, we need to transform it into
-a table with the following structure:
-
-sample_name \| gene_name1/gene1_pos1 \| gene_name1/gene1_pos2 \|
-gene_name2/gene2_pos1 \| …
-
-For the previous example, the table would look like this:
-
-| sample_name     | ECs_1169/456 | ECs_1169/1250712 | FOC43_RS01045/603 |   … |
-|:----------------|:-------------|:-----------------|:------------------|----:|
-| GCA_012688215.1 | C            | NO-SNP           | NULL              |   … |
-| GCA_012637185.1 | NO-SNP       | A                | NULL              |   … |
-| GCA_005283725.1 | NULL         | NULL             | G                 |   … |
-
-As we can see, each SNP is represented as a column, and each row
-represents a sample. For each SNP, we can have the following values:
-
-- NO-SNP: no SNP found in this position of the gene, but the gene does
-  belong to the sample
-- NULL: the gene does not belong to the sample
-- A, C, G, T: the SNP found in this position of the gene
-
-In addition, we will encode these values into numerical values so that
-we do limit the number of ML algorithms we can use. But before that,
-let’s do some sanity checks.
-
-``` r
-# Filter out SNPs with no gene name (which are the same as sample with non gene_pos)
-snps_data <- snps_data %>%
-  filter(!is.na(gene_name))
-# Filter out SNPS which count for >5 in the same gene (this is considered an anomaly, due to reference genome, etc.) #TODO: double check this
-snps_data <- snps_data %>%
-  group_by(sample_name, gene_name) %>%
-  mutate(count = n()) %>%
-  filter(count <= MAX_NUMBER_OF_SNPS) %>%
-  select(-count)
-```
-
-Pivot table with above specifications:
-
-``` r
-snps_data_wide <- snps_data %>%
-  select(sample_name, gene_name, gene_pos, alt) %>%
-  pivot_wider(names_from = c("gene_pos"), values_from = alt, values_fill = "NO-SNP") %>%
-  pivot_longer(cols = -c(sample_name, gene_name), names_to = "gene_pos", values_to = "alt") %>%
-  pivot_wider(names_from = c("gene_name", "gene_pos"), values_from = alt, values_fill = "NULL", names_sep = "/") %>%
-  ungroup()
-```
-
-Now we will encode the values into numerical values. We will use the
-following encoding:
-
-``` r
-snp_2_num <- c(
-  "NULL" = -1,
-  "NO-SNP" = 0,
-  "A" = 1,
-  "C" = 2,
-  "G" = 3,
-  "T" = 4
-)
-```
-
-``` r
-# Mutate all except sample_name
-snps_data_wide <- snps_data_wide %>%
-  mutate(across(-c(sample_name), ~ as.numeric(snp_2_num[.x])))
-```
-
-### 4.2.2 Null values detection
-
-``` r
-# Count number of nulls per sample in percentage
-snps_data_wide %>%
-  mutate(nulls = rowSums(select(., -sample_name) == -1) / ncol(select(., -sample_name)) * 100) %>%
-  select(sample_name, nulls) %>%
-  arrange(desc(nulls))
-```
-
-    ## # A tibble: 114 x 2
-    ##    sample_name     nulls
-    ##    <chr>           <dbl>
-    ##  1 GCA_005287105.1  98.0
-    ##  2 GCA_012687565.1  98.0
-    ##  3 GCA_005284005.1  98.0
-    ##  4 GCA_012708885.1  98.0
-    ##  5 GCA_012714385.1  98.0
-    ##  6 GCA_012714465.1  98.0
-    ##  7 GCA_012708785.1  98.0
-    ##  8 GCA_005285885.1  98.0
-    ##  9 GCA_005282525.1  98.0
-    ## 10 GCA_005285105.1  98.0
-    ## # ... with 104 more rows
-
-For most of the samples, there is very little coocurrences in terms of
-SNPs.
-
-### 4.2.3 Outliers analysis
-
-``` r
-# For each sample, how many SNPs are present?
-snps_data_wide %>%
-  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
-  select(sample_name, count) %>%
-  arrange(desc(count))
-```
-
-    ## # A tibble: 114 x 2
-    ##    sample_name     count
-    ##    <chr>           <dbl>
-    ##  1 GCA_012686285.1    37
-    ##  2 GCA_012688045.1    33
-    ##  3 GCA_012688215.1    25
-    ##  4 GCA_012717195.1    24
-    ##  5 GCA_012686445.1    21
-    ##  6 GCA_012735855.1    20
-    ##  7 GCA_012714445.1    20
-    ##  8 GCA_008524145.1    20
-    ##  9 GCA_012642525.1    18
-    ## 10 GCA_005289765.1    17
-    ## # ... with 104 more rows
-
-``` r
-# Mean number of SNPs per sample
-snps_data_wide %>%
-  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
-  summarise(mean(count)) %>%
-  pull()
-```
-
-    ## [1] 5.850877
-
-``` r
-# Boxplot summarizing above information
-snps_data_wide %>%
-  mutate(count = rowSums(select(., -sample_name) > 0)) %>%
-  ggplot(aes(x = "", y = count)) +
-  geom_boxplot() +
-  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
-  theme_classic()
-```
-
-![](figures/unnamed-chunk-20-1.png)<!-- -->
-
-## 4.3 SNPs from CARD
+## 4.2 SNPs from CARD
 
 Although [CARD database](https://card.mcmaster.ca/) offers us a large
 variety of information about AMR vectors, we will only use the SNPs
 information. For more information about the output format, please refer
 to the official [documentation](https://github.com/arpcard/rgi#id72).
 
-### 4.3.1 Filtering
+### 4.2.1 Filtering
 
 We will be filtering by the following criteria: \* Column `Model_type`
 must be either `protein variant model` or `protein overexpression model`
@@ -669,7 +441,7 @@ card_snps_data <- card_snps_data %>%
   unnest(SNPs_in_Best_Hit_ARO)
 ```
 
-### 4.3.2 Exploration/Visualization
+### 4.2.2 Exploration/Visualization
 
 ``` r
 # Boxplot showing how many SNPs are present in each sample
@@ -682,7 +454,7 @@ card_snps_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-22-1.png)<!-- -->
+![](figures/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 # Histogram showing how many SNPs are present in each sample
@@ -696,9 +468,9 @@ card_snps_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-23-1.png)<!-- -->
+![](figures/unnamed-chunk-14-1.png)<!-- -->
 
-### 4.3.3 Preparation
+### 4.2.3 Preparation
 
 Now that we have filtered the data, we will need to transform it into a
 format compatible for ML algorithms, that is, a table with the features
@@ -721,7 +493,7 @@ card_snps_data_wide <- card_snps_data %>%
     ## `summarise()` has grouped output by 'SAMPLE_ID'. You can override using the
     ## `.groups` argument.
 
-## 4.4 AMR labels
+## 4.3 AMR labels
 
 The structure of this table is as follows:
 
@@ -739,7 +511,7 @@ sample. The values of each cell can be:
 One sample can be resistant to multiple antibiotics, so we can have
 multiple 1s in the same row.
 
-### 4.4.1 Preparation
+### 4.3.1 Preparation
 
 Adapt data so it has the same sampleIds as ARGS and variant calling
 data. AMR labes happens to have the biosamples accession numbers as
@@ -755,7 +527,7 @@ amr_labels <- amr_labels %>%
   select(SampleID, everything())
 ```
 
-### 4.4.2 Cleaning
+### 4.3.2 Cleaning
 
 We will remove those antibiotics with more than 30% of null values.
 
@@ -803,7 +575,7 @@ amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
 ```
 
-### 4.4.3 Exploration
+### 4.3.3 Exploration
 
 Count how many samples are resistance to each antibiotic:
 
@@ -841,7 +613,7 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-29-1.png)<!-- -->
+![](figures/unnamed-chunk-20-1.png)<!-- -->
 
 # 5 Explore data
 
@@ -861,28 +633,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-30-1.png)<!-- -->
-
-Median number of SNPs per antibiotic:
-
-``` r
-# Boxplot with median number of SNPs per antibiotic
-# In this case, SNPS can have multiple values, not only 0 and 1. We will count those with values > 0 as valid SNPs conferring resistance
-snps_data %>%
-  ungroup() %>%
-  select(sample_name) %>%
-  group_by(sample_name) %>%
-  summarise(n_snps = n()) %>%
-  left_join(amr_labels, by = c("sample_name" = "SampleID")) %>%
-  pivot_longer(cols = -c(sample_name, n_snps), names_to = "antibiotic", values_to = "resistant") %>%
-  filter(resistant == 1) %>%
-  ggplot(aes(x = antibiotic, y = n_snps, color = antibiotic)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of SNPs")
-```
-
-![](figures/unnamed-chunk-31-1.png)<!-- -->
+![](figures/unnamed-chunk-21-1.png)<!-- -->
 
 Median number of CARD SNPs per antibiotic:
 
@@ -900,15 +651,11 @@ card_snps_data %>%
   labs(x = "Antibiotic", y = "Number of CARD SNPs")
 ```
 
-![](figures/unnamed-chunk-32-1.png)<!-- -->
+![](figures/unnamed-chunk-22-1.png)<!-- -->
 
 # 6 Save data
 
 ``` r
-snps_data_output_path <- paste0("data/results/variant_calling/snps_data", batch_number, "_cleaned.tsv")
-snps_data_wide %>%
-  write_tsv(snps_data_output_path)
-
 card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2.5", "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)

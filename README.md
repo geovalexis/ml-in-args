@@ -18,7 +18,6 @@ Using genetic information from resistant bacteria, it is possible to model the c
     * `data_collection_bvbrc/`: contains various scripts to retrieve the input data from [BV-BRC](https://www.bv-brc.org/) source
     * `data_collection_ncbi/`: contains various scripts to retrieve the input data from [NCBI](https://www.ncbi.nlm.nih.gov/) source
     * `resfinder/`: identifies the ARGs present in the samples by [Resfinder v4.3.1](https://bitbucket.org/genomicepidemiology/resfinder/src/master/src/resfinder/)
-    * `variant_calling/`: variant calling pipeline to get SNPs from the samples
     * `config.yaml`: configuration file for the project (**You might need to modify this file in order to run the project**)
 
 ## Future improvements
