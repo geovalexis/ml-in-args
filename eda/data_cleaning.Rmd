@@ -33,7 +33,7 @@ MAX_NULLS_PER_ANTIBIOTIC <- 30 # In percentage
 
 ```{r}
 # ARGs (Antibiotic Resistance Genes)
-args_data_filepath <- paste0("data/results/args_calling/args_table", batch_number, ".csv")
+args_data_filepath <- paste0("data/results/resfinder/args_table", batch_number, ".csv")
 args_data <- read_csv(args_data_filepath, col_types = cols("sample_name" = col_character()))
 ## Fix/extract name of samples
 args_data <- args_data %>%
@@ -521,7 +521,7 @@ card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 
-args_data_output_path <- paste0("data/results/args_calling/args_data", batch_number, "_cleaned.tsv")
+args_data_output_path <- paste0("data/results/resfinder/args_data", batch_number, "_cleaned.tsv")
 args_data %>%
   write_tsv(args_data_output_path)
 

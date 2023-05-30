@@ -46,7 +46,7 @@ library(tidyverse)
 # 2 Read data
 
 ``` r
-args_data_cleaned_path <- "data/results/args_calling/args_data_latest_cleaned.tsv"
+args_data_cleaned_path <- "data/results/resfinder/args_data_latest_cleaned.tsv"
 args_data <- read_tsv(args_data_cleaned_path)
 ```
 
