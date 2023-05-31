@@ -42,7 +42,7 @@ args_data
 
 ```{r}
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch2.5", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", batch_number, ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 # Fix/extract name of samples
 card_data <- card_data %>%
@@ -308,6 +308,7 @@ knitr::kable(resistant_samples_per_antibiotic)
 resistant_samples_per_antibiotic %>%
   ggplot(aes(x = antibiotic, y = `resistant samples`)) +
   geom_bar(stat = "identity") +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
@@ -350,7 +351,7 @@ card_snps_data %>%
 # Save data
 
 ```{r}
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2.5", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", batch_number, "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 

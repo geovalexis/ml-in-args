@@ -1,7 +1,7 @@
 Data Cleaning
 ================
 Geovanny Risco
-May 30, 2023
+May 31, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -111,7 +111,7 @@ args_data
 
 ``` r
 # Results from CARD database
-card_data_filepath <- paste0("data/results/card/card_results", "_batch2.5", ".tsv")
+card_data_filepath <- paste0("data/results/card/card_results", batch_number, ".tsv")
 card_data <- read_tsv(card_data_filepath, na = c("n/a"))
 ```
 
@@ -120,12 +120,12 @@ card_data <- read_tsv(card_data_filepath, na = c("n/a"))
     ##   dat <- vroom(...)
     ##   problems(dat)
 
-    ## Rows: 120203 Columns: 27
+    ## Rows: 243992 Columns: 27
     ## -- Column specification --------------------------------------------------------
     ## Delimiter: "\t"
-    ## chr (16): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
-    ## dbl  (9): TAX_ID, Start, Stop, Pass_Bitscore, Best_Hit_Bitscore, Best_Identi...
-    ## lgl  (2): Other_SNPs, Nudged
+    ## chr (18): SAMPLE_ID, ORF_ID, Contig, Orientation, Cut_Off, Best_Hit_ARO, Mod...
+    ## dbl  (8): TAX_ID, Start, Stop, Pass_Bitscore, Best_Hit_Bitscore, Best_Identi...
+    ## lgl  (1): Other_SNPs
     ## 
     ## i Use `spec()` to retrieve the full column specification for this data.
     ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
@@ -137,7 +137,7 @@ card_data <- card_data %>%
 card_data
 ```
 
-    ## # A tibble: 120,203 x 27
+    ## # A tibble: 243,992 x 27
     ##    TAX_ID SAMPLE_ID  ORF_ID Contig  Start   Stop Orien~1 Cut_Off Pass_~2 Best_~3
     ##     <dbl> <chr>      <chr>  <chr>   <dbl>  <dbl> <chr>   <chr>     <dbl>   <dbl>
     ##  1    195 GCA_00528~ AACMV~ AACMV~  40782  41555 +       Perfect     500    516.
@@ -150,13 +150,13 @@ card_data
     ##  8    195 GCA_00528~ AACMR~ AACMR~   3297   5216 +       Strict      300   1304.
     ##  9    195 GCA_00528~ AACMR~ AACMR~   2577   3350 +       Perfect     500    516.
     ## 10    197 GCA_00529~ AACNR~ AACNR~  20452  21225 -       Perfect     500    516.
-    ## # ... with 120,193 more rows, 17 more variables: Best_Hit_ARO <chr>,
+    ## # ... with 243,982 more rows, 17 more variables: Best_Hit_ARO <chr>,
     ## #   Best_Identities <dbl>, ARO <dbl>, Model_type <chr>,
     ## #   SNPs_in_Best_Hit_ARO <chr>, Other_SNPs <lgl>, `Drug Class` <chr>,
     ## #   `Resistance Mechanism` <chr>, `AMR Gene Family` <chr>, Predicted_DNA <chr>,
     ## #   Predicted_Protein <chr>, CARD_Protein_Sequence <chr>,
-    ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <dbl>,
-    ## #   Nudged <lgl>, Note <chr>, and abbreviated variable names ...
+    ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <chr>,
+    ## #   Nudged <chr>, Note <chr>, and abbreviated variable names ...
 
 ``` r
 # Reference genomes (in BED format)
@@ -609,6 +609,7 @@ knitr::kable(resistant_samples_per_antibiotic)
 resistant_samples_per_antibiotic %>%
   ggplot(aes(x = antibiotic, y = `resistant samples`)) +
   geom_bar(stat = "identity") +
+  theme_classic() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
@@ -656,7 +657,7 @@ card_snps_data %>%
 # 6 Save data
 
 ``` r
-card_snps_data_output_path <- paste0("data/results/card/card_snps_data", "_batch2.5", "_cleaned.tsv")
+card_snps_data_output_path <- paste0("data/results/card/card_snps_data", batch_number, "_cleaned.tsv")
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
 
