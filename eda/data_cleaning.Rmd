@@ -50,7 +50,6 @@ card_data <- card_data %>%
 card_data
 ```
 
-
 ```{r}
 # AMR (Antimicrobial Resistance) labels
 amr_labels <- read_csv("data/results/data_collection_ncbi/amr_labels.csv", col_types = cols("SampleID" = col_character()))
@@ -63,8 +62,9 @@ samples_metadata <- read_tsv("data/results/data_collection_ncbi/assembly_accessi
 samples_metadata
 ```
 
-For now and until BV-BRC is active again, we will filter out 1351 samples (which are not in NCBI).
-In order to add BV-BRC samples, we need to parse AMR labels information in a different way:
+For now and until BV-BRC is active again, we will filter out 1351
+samples (which are not in NCBI). In order to add BV-BRC samples, we need
+to parse AMR labels information in a different way:
 
 ```{r}
 amr_labels <- amr_labels %>%
@@ -75,24 +75,25 @@ args_data <- args_data %>%
   filter(sample_name %in% samples_metadata$assembly_accession)
 ```
 
-
 # Clean and prepare data
 
-First of all, we will need to clean and prepare the data in order to perform the analysis.
+First of all, we will need to clean and prepare the data in order to
+perform the analysis.
 
 ## ARGs from Resfinder
 
 This table has the following structure:
 
-| sample_name | GeneA | GeneB | GeneC | ... |
-|:------------|-------|-------|-------|----:|
-| GCA_012637185.1 | 0 | 1 | 0 | ... |
-| ... | ... | ... | ... | ... |
+| sample_name     | GeneA | GeneB | GeneC | ... |
+|:----------------|-------|-------|-------|----:|
+| GCA_012637185.1 | 0     | 1     | 0     | ... |
+| ...             | ...   | ...   | ...   | ... |
 
-For each gene, a boolean value is given dependending on whether the gene is resistance or not.
+For each gene, a boolean value is given dependending on whether the gene
+is resistance or not.
 
-* 1: resistance gene
-* 0: non-resistance gene
+-   1: resistance gene
+-   0: non-resistance gene
 
 ### Null values detection
 
@@ -138,9 +139,11 @@ args_data %>%
 
 ### Feature engineering
 
-As all of the columns we have in this table is boolean data, there is not much to do in terms of feature engineering. 
-Hoewever, we have noticed that there are some ARGs that does not contribute to resistance in any sample, that is, they 
-are always 0. Since this does not provide us any information, we will remove them from the table.
+As all of the columns we have in this table is boolean data, there is
+not much to do in terms of feature engineering. Hoewever, we have
+noticed that there are some ARGs that does not contribute to resistance
+in any sample, that is, they are always 0. Since this does not provide
+us any information, we will remove them from the table.
 
 ```{r}
 # Check length of args_data columns
@@ -157,16 +160,19 @@ After the filtering, we have removed `r removed_ncols` columns.
 
 ## SNPs from CARD
 
-Although [CARD database](https://card.mcmaster.ca/) offers us a large variety of information about AMR vectors, we will only use the SNPs information. 
-For more information about the output format, please refer to the official [documentation](https://github.com/arpcard/rgi#id72).
+Although [CARD database](https://card.mcmaster.ca/) offers us a large
+variety of information about AMR vectors, we will only use the SNPs
+information. For more information about the output format, please refer
+to the official [documentation](https://github.com/arpcard/rgi#id72).
 
 ### Filtering
 
-We will be filtering by the following criteria:
-  * Column `Model_type` must be either `protein variant model` or `protein overexpression model`
-  * They must have a value within the column `SNPs_in_Best_Hit_ARO`. NOTE: this column can have multiple values separated by commas.
+We will be filtering by the following criteria: \* Column `Model_type`
+must be either `protein variant model` or `protein overexpression model`
+\* They must have a value within the column `SNPs_in_Best_Hit_ARO`.
+NOTE: this column can have multiple values separated by commas.
 
-```{r}	
+```{r}
 # Filter by Model_type
 card_snps_data <- card_data %>%
   filter(Model_type %in% c("protein variant model", "protein overexpression model"))
@@ -206,12 +212,15 @@ card_snps_data %>%
   theme_classic()
 ```
 
-
 ### Preparation
 
-Now that we have filtered the data, we will need to transform it into a format compatible for ML algorithms, that is, a table with the features of interest as columns and the samples as rows.
-In this case, the features we are interested in are the SNPs, so we will need to pivot the table so that each row represents a sample and each column represents a SNP ID (column `SNPs_in_Best_Hit_ARO`).
-The value of each cell will be the number of times that the SNP appears in the sample.
+Now that we have filtered the data, we will need to transform it into a
+format compatible for ML algorithms, that is, a table with the features
+of interest as columns and the samples as rows. In this case, the
+features we are interested in are the SNPs, so we will need to pivot the
+table so that each row represents a sample and each column represents a
+SNP ID (column `SNPs_in_Best_Hit_ARO`). The value of each cell will be
+the number of times that the SNP appears in the sample.
 
 ```{r}
 # Pivot table
@@ -227,22 +236,25 @@ card_snps_data_wide <- card_snps_data %>%
 
 The structure of this table is as follows:
 
-| SampleID | Antibiotic1 | Antibiotic2 | Antibiotic3 | ... |
-|:---------|-------------|-------------|-------------|----:|
-| SAMN04256112 | 0 | 1 | 0 | ... |
-| ... | ... | ... | ... | ... |
+| SampleID     | Antibiotic1 | Antibiotic2 | Antibiotic3 | ... |
+|:-------------|-------------|-------------|-------------|----:|
+| SAMN04256112 | 0           | 1           | 0           | ... |
+| ...          | ...         | ...         | ...         | ... |
 
-Where each column represents an antibiotic and each row represents a sample. The values of each cell can be:
+Where each column represents an antibiotic and each row represents a
+sample. The values of each cell can be:
 
-* 0: the sample is not resistant to the antibiotic
-* 1: the sample is resistant to the antibiotic
+-   0: the sample is not resistant to the antibiotic
+-   1: the sample is resistant to the antibiotic
 
-One sample can be resistant to multiple antibiotics, so we can have multiple 1s in the same row.
+One sample can be resistant to multiple antibiotics, so we can have
+multiple 1s in the same row.
 
 ### Preparation
 
-Adapt data so it has the same sampleIds as ARGS and variant calling data. AMR labes happens to have
-the biosamples accession numbers as sampleIds, so we will need to map them to their corresponding assembly
+Adapt data so it has the same sampleIds as ARGS and variant calling
+data. AMR labes happens to have the biosamples accession numbers as
+sampleIds, so we will need to map them to their corresponding assembly
 accession ids.
 
 ```{r}
@@ -256,7 +268,8 @@ amr_labels <- amr_labels %>%
 
 ### Cleaning
 
-We will remove those antibiotics with more than `r MAX_NULLS_PER_ANTIBIOTIC`% of null values.
+We will remove those antibiotics with more than
+`r MAX_NULLS_PER_ANTIBIOTIC`% of null values.
 
 ```{r}
 # Count null values per antibiotic (each column) in percentage
@@ -290,21 +303,29 @@ resistant_samples_per_antibiotic <- amr_labels %>%
 knitr::kable(resistant_samples_per_antibiotic)
 ```
 
-```{r}
+```{r, echo=FALSE}
+#Customize colour palette
+antibiotics_color_palette <- c("#8DD3C7" ,"#FFFFB3" ,"#BEBADA" ,"#FB8072" ,"#80B1D3" ,"#FDB462" ,"#B3DE69" ,"#FCCDE5" ,"#D9D9D9" ,"#BC80BD" ,"#CCEBC5" ,"#FFED6F", "lightblue")
+```
+
+```{r n_resistant_samples_per_antibiotic}
 # Bar plot with number of resistant samples per antibiotic
 resistant_samples_per_antibiotic %>%
-  ggplot(aes(x = antibiotic, y = `resistant samples`)) +
+  ggplot(aes(x = antibiotic, y = `resistant samples`, fill= antibiotic)) +
   geom_bar(stat = "identity") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x = "Antibiotic", y = "Number of resistant samples")
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  labs(x = "Antibiotic", y = "Number of resistant samples") +
+  scale_fill_manual(values = antibiotics_color_palette) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(0, 4000))
 ```
 
 # Explore data
 
 Median number of resistant genes per antibiotic:
 
-```{r}
+```{r median_number_resistant_genes_per_antibiotic}
 # Boxplot with median number of resistant genes per antibiotic
 args_data %>%
   mutate(n_args = rowSums(select(., -sample_name))) %>%
@@ -312,15 +333,20 @@ args_data %>%
   left_join(amr_labels, by = c("sample_name" = "SampleID")) %>%
   pivot_longer(cols = -c(sample_name, n_args), names_to = "antibiotic", values_to = "resistant") %>%
   filter(resistant == 1) %>%
-  ggplot(aes(x = antibiotic, y = n_args, color = antibiotic)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of resistant genes")
+  ggplot(aes(x = antibiotic, y = n_args, fill = antibiotic), ) +
+  geom_boxplot(outlier.shape = NA) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of resistant genes") +
+  scale_fill_manual(values = antibiotics_color_palette) +
+  scale_y_continuous(limits = c(0, 20)) +
+  theme(legend.position = "none")
 ```
 
 Median number of CARD SNPs per antibiotic:
 
-```{r}
+```{r median_number_card_snps_per_antibiotic}
 # Boxplot with median number of CARD SNPs per antibiotic
 card_snps_data %>%
   group_by(SAMPLE_ID) %>%
@@ -328,12 +354,16 @@ card_snps_data %>%
   left_join(amr_labels, by = c("SAMPLE_ID" = "SampleID")) %>%
   pivot_longer(cols = -c(SAMPLE_ID, n_card_snps), names_to = "antibiotic", values_to = "resistant") %>%
   filter(resistant == 1) %>%
-  ggplot(aes(x = antibiotic, y = n_card_snps, color = antibiotic)) +
+  ggplot(aes(x = antibiotic, y = n_card_snps, fill = antibiotic)) +
   geom_boxplot() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of CARD SNPs")
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of CARD SNPs")+
+  scale_fill_manual(values = antibiotics_color_palette) +
+  scale_y_continuous(limits = c(0, 10)) +
+  theme(legend.position = "none")
 ```
-
 
 # Save data
 

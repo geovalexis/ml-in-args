@@ -557,14 +557,17 @@ knitr::kable(resistant_samples_per_antibiotic)
 ``` r
 # Bar plot with number of resistant samples per antibiotic
 resistant_samples_per_antibiotic %>%
-  ggplot(aes(x = antibiotic, y = `resistant samples`)) +
+  ggplot(aes(x = antibiotic, y = `resistant samples`, fill= antibiotic)) +
   geom_bar(stat = "identity") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x = "Antibiotic", y = "Number of resistant samples")
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  labs(x = "Antibiotic", y = "Number of resistant samples") +
+  scale_fill_manual(values = antibiotics_color_palette) +
+  theme(legend.position = "none") +
+  scale_y_continuous(limits = c(0, 4000))
 ```
 
-![](figures/unnamed-chunk-19-1.png)<!-- -->
+![](figures/n_resistant_samples_per_antibiotic-1.png)<!-- -->
 
 # 5 Explore data
 
@@ -578,13 +581,20 @@ args_data %>%
   left_join(amr_labels, by = c("sample_name" = "SampleID")) %>%
   pivot_longer(cols = -c(sample_name, n_args), names_to = "antibiotic", values_to = "resistant") %>%
   filter(resistant == 1) %>%
-  ggplot(aes(x = antibiotic, y = n_args, color = antibiotic)) +
-  geom_boxplot() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of resistant genes")
+  ggplot(aes(x = antibiotic, y = n_args, fill = antibiotic), ) +
+  geom_boxplot(outlier.shape = NA) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of resistant genes") +
+  scale_fill_manual(values = antibiotics_color_palette) +
+  scale_y_continuous(limits = c(0, 20)) +
+  theme(legend.position = "none")
 ```
 
-![](figures/unnamed-chunk-20-1.png)<!-- -->
+    ## Warning: Removed 17 rows containing non-finite values (`stat_boxplot()`).
+
+![](figures/median_number_resistant_genes_per_antibiotic-1.png)<!-- -->
 
 Median number of CARD SNPs per antibiotic:
 
@@ -596,13 +606,18 @@ card_snps_data %>%
   left_join(amr_labels, by = c("SAMPLE_ID" = "SampleID")) %>%
   pivot_longer(cols = -c(SAMPLE_ID, n_card_snps), names_to = "antibiotic", values_to = "resistant") %>%
   filter(resistant == 1) %>%
-  ggplot(aes(x = antibiotic, y = n_card_snps, color = antibiotic)) +
+  ggplot(aes(x = antibiotic, y = n_card_snps, fill = antibiotic)) +
   geom_boxplot() +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of CARD SNPs")
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
+  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  labs(x = "Antibiotic", y = "Number of CARD SNPs")+
+  scale_fill_manual(values = antibiotics_color_palette) +
+  scale_y_continuous(limits = c(0, 10)) +
+  theme(legend.position = "none")
 ```
 
-![](figures/unnamed-chunk-21-1.png)<!-- -->
+![](figures/median_number_card_snps_per_antibiotic-1.png)<!-- -->
 
 # 6 Save data
 
