@@ -1,7 +1,7 @@
 Data Cleaning
 ================
 Geovanny Risco
-May 31, 2023
+June 04, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -157,56 +157,6 @@ card_data
     ## #   Predicted_Protein <chr>, CARD_Protein_Sequence <chr>,
     ## #   `Percentage Length of Reference Sequence` <dbl>, ID <chr>, Model_ID <chr>,
     ## #   Nudged <chr>, Note <chr>, and abbreviated variable names ...
-
-``` r
-# Reference genomes (in BED format)
-
-## Loop through reference genomes folder and read BED files
-refs_genomes_dir <- "data/reference_genomes"
-refs_genomes_files <- list.files(refs_genomes_dir, pattern = ".bed", full.names = TRUE, recursive = TRUE)
-## Read each of the BED files and store them ina dictionary which key is the name of the file and the values a list of genes
-refs_genomes <- list()
-for (file in refs_genomes_files) {
-  tax_id <- str_remove(basename(file), ".bed")
-  refs_genomes[tax_id] <- read_tsv(file, col_select = 4)
-}
-```
-
-    ## Rows: 2727 Columns: 1
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (1): WMS_RS03090
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 1749 Columns: 1
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (1): dcuC
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 1627 Columns: 1
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (1): dnaA
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 4672 Columns: 1
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (1): thrL
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
-    ## Rows: 4493 Columns: 1
-    ## -- Column specification --------------------------------------------------------
-    ## Delimiter: "\t"
-    ## chr (1): thrL
-    ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
 # AMR (Antimicrobial Resistance) labels
@@ -373,7 +323,7 @@ args_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-10-1.png)<!-- -->
+![](figures/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 # Histogram with density of resistance genes per sample
@@ -389,7 +339,7 @@ args_data %>%
     ## Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.
     ## i Please use `after_stat(density)` instead.
 
-![](figures/unnamed-chunk-10-2.png)<!-- -->
+![](figures/unnamed-chunk-9-2.png)<!-- -->
 
 ### 4.1.3 Feature engineering
 
@@ -454,7 +404,7 @@ card_snps_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-13-1.png)<!-- -->
+![](figures/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 # Histogram showing how many SNPs are present in each sample
@@ -468,7 +418,7 @@ card_snps_data %>%
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-14-1.png)<!-- -->
+![](figures/unnamed-chunk-13-1.png)<!-- -->
 
 ### 4.2.3 Preparation
 
@@ -614,7 +564,7 @@ resistant_samples_per_antibiotic %>%
   labs(x = "Antibiotic", y = "Number of resistant samples")
 ```
 
-![](figures/unnamed-chunk-20-1.png)<!-- -->
+![](figures/unnamed-chunk-19-1.png)<!-- -->
 
 # 5 Explore data
 
@@ -634,7 +584,7 @@ args_data %>%
   labs(x = "Antibiotic", y = "Number of resistant genes")
 ```
 
-![](figures/unnamed-chunk-21-1.png)<!-- -->
+![](figures/unnamed-chunk-20-1.png)<!-- -->
 
 Median number of CARD SNPs per antibiotic:
 
@@ -652,7 +602,7 @@ card_snps_data %>%
   labs(x = "Antibiotic", y = "Number of CARD SNPs")
 ```
 
-![](figures/unnamed-chunk-22-1.png)<!-- -->
+![](figures/unnamed-chunk-21-1.png)<!-- -->
 
 # 6 Save data
 

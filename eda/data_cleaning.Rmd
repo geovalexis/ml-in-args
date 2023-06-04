@@ -50,19 +50,6 @@ card_data <- card_data %>%
 card_data
 ```
 
-```{r}
-# Reference genomes (in BED format)
-
-## Loop through reference genomes folder and read BED files
-refs_genomes_dir <- "data/reference_genomes"
-refs_genomes_files <- list.files(refs_genomes_dir, pattern = ".bed", full.names = TRUE, recursive = TRUE)
-## Read each of the BED files and store them ina dictionary which key is the name of the file and the values a list of genes
-refs_genomes <- list()
-for (file in refs_genomes_files) {
-  tax_id <- str_remove(basename(file), ".bed")
-  refs_genomes[tax_id] <- read_tsv(file, col_select = 4)
-}
-```
 
 ```{r}
 # AMR (Antimicrobial Resistance) labels
