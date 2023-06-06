@@ -95,6 +95,17 @@ is resistance or not.
 -   1: resistance gene
 -   0: non-resistance gene
 
+### Overview of the data
+  
+```{r}
+# Sum of all different ARG genes (sum all columns that have at least one 1)
+args_data %>%
+  summarise_all(~ sum(.x == 1, na.rm = TRUE)) %>%
+  gather(key = "gene", value = "count") %>%
+  filter(count > 0) %>%
+  arrange(desc(count))
+```
+
 ### Null values detection
 
 ```{r}
@@ -115,26 +126,70 @@ args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
   select(sample_name, count) %>%
   arrange(desc(count))
-# Mean number of resistance genes per sample
+# Summary metrics for number of resistance genes per sample
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
-  summarise(mean(count)) %>%
-  pull()
+  summarise(mean = mean(count), std = sd(count), median = median(count), min = min(count), max = max(count))
+```
+
+```{r "Boxplot for distribution of ARGs per sample"}
 # Boxplot summarizing above information
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
-  labs(x = "", y = "Number of resistance genes", title = "Distribution of resistance genes per sample") +
+  labs(x = "", y = "Number of resistance genes") +
   theme_classic()
+n_args_samples <- nrow(args_data)
+```
+
+As can be seen in the boxplot, there are some samples that have a strange high number of resistance genes.
+These outliers can produce noise in the data, so we will need to set a theshold to remove them.
+
+```{r}
+# Set threshold to remove outliers
+args_outliers_threshold <- 15
+```
+
+We will consider as anormal samples those that have more than `r args_outliers_threshold` resistance genes.
+We don't know the reason behind this abnormality though, we will need to investigate further.
+
+```{r "Boxplot for distribution of ARGs per sample (without outliers)"}
+# Remove those samples that have more than the threshold of resistance genes
+args_data <- args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  filter(count <= args_outliers_threshold) %>%
+  select(-count)
+n_args_samples_without_outliers <- nrow(args_data)
+
+# Remake boxplot
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of resistance genes") +
+  theme_classic()
+```
+
+After applying the threshold, we have removed a total of `r n_args_samples - n_args_samples_without_outliers` samples.
+
+```{r "Histogram with distribution of ARGs per sample"}
 # Histogram with density of resistance genes per sample
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
   ggplot(aes(x = count)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Number of resistance genes", y = "Density", title = "Distribution of resistance genes per sample") +
+  labs(x = "Number of resistance genes", y = "Density") +
   theme_classic()
+```
+
+Recalculate summary metrics after applying filters:
+
+```{r}
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  summarise(mean = mean(count), std = sd(count), median = median(count), min = min(count), max = max(count))
 ```
 
 ### Feature engineering
@@ -167,9 +222,12 @@ to the official [documentation](https://github.com/arpcard/rgi#id72).
 
 ### Filtering
 
-We will be filtering by the following criteria: \* Column `Model_type`
+We will be filtering by the following criteria: 
+
+* Column `Model_type`
 must be either `protein variant model` or `protein overexpression model`
-\* They must have a value within the column `SNPs_in_Best_Hit_ARO`.
+
+* They must have a value within the column `SNPs_in_Best_Hit_ARO`.
 NOTE: this column can have multiple values separated by commas.
 
 ```{r}
@@ -189,18 +247,35 @@ card_snps_data <- card_snps_data %>%
 
 ### Exploration/Visualization
 
-```{r}
+```{r summary_data}
+# Summary metrics number of SNPs per sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_snps = n()) %>%
+  summarise(mean = mean(n_snps), std = sd(n_snps), median = median(n_snps), min = min(n_snps), max = max(n_snps))
+```
+
+```{r "Boxplot for distribution of SNPs per sample"}
 # Boxplot showing how many SNPs are present in each sample
 card_snps_data %>%
   group_by(SAMPLE_ID) %>%
   summarise(count = n()) %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
-  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  labs(x = "", y = "Number of SNPs") +
   theme_classic()
 ```
 
+Recalulate summary metrics after applying threshold:
+
 ```{r}
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_snps = n()) %>%
+  summarise(mean = mean(n_snps), std = sd(n_snps), median = median(n_snps), min = min(n_snps), max = max(n_snps))
+```
+
+```{r "Histogram of distribution of SNPs per sample"}
 # Histogram showing how many SNPs are present in each sample
 card_snps_data %>%
   group_by(SAMPLE_ID) %>%
@@ -208,7 +283,7 @@ card_snps_data %>%
   ggplot(aes(x = count)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Number of SNPs", y = "Density", title = "Distribution of SNPs per sample") +
+  labs(x = "Number of SNPs", y = "Density") +
   theme_classic()
 ```
 
@@ -268,6 +343,8 @@ amr_labels <- amr_labels %>%
 
 ### Cleaning
 
+#### Null values analysis
+
 We will remove those antibiotics with more than
 `r MAX_NULLS_PER_ANTIBIOTIC`% of null values.
 
@@ -284,11 +361,50 @@ knitr::kable(nulls_per_antibiotic)
 ```{r}
 # Remove antibiotics with more than 30% of null values
 antibiotics_to_remove <- nulls_per_antibiotic %>%
-  filter(`% of null values` > 30) %>%
+  filter(`% of null values` > MAX_NULLS_PER_ANTIBIOTIC) %>%
   pull(antibiotic)
 amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
+
+# Fill remaining null values with 0
+amr_labels <- amr_labels %>%
+  mutate_all(~ replace_na(.x, 0))
 ```
+
+A total of `r length(antibiotics_to_remove)` antibiotics have been removed.
+
+#### Outliers analysis
+
+```{r}
+# Count number of resistant antibiotics per sample
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  select(`SampleID`, n_resistant) %>%
+  arrange(desc(n_resistant))
+```
+
+```{r "Boxplot for distribution of resistant antibiotics per sample"}
+# Boxplot summarizing above information
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  ggplot(aes(x = "", y = n_resistant)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of antibiotics") +
+  theme_classic()
+```
+
+```{r "Histogram with distribution of resistant antibiotics per sample"}  
+# Histogram with density of resistant antibiotics per sample
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  ggplot(aes(x = n_resistant)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of antibiotics", y = "Density") +
+  theme_classic()
+```
+
+We do not observe relevant outliers in this case, so we will not apply any threshold.
 
 ### Exploration
 
@@ -304,14 +420,14 @@ knitr::kable(resistant_samples_per_antibiotic)
 ```
 
 ```{r, echo=FALSE}
-#Customize colour palette
-antibiotics_color_palette <- c("#8DD3C7" ,"#FFFFB3" ,"#BEBADA" ,"#FB8072" ,"#80B1D3" ,"#FDB462" ,"#B3DE69" ,"#FCCDE5" ,"#D9D9D9" ,"#BC80BD" ,"#CCEBC5" ,"#FFED6F", "lightblue")
+# Customize colour palette
+antibiotics_color_palette <- c("#8DD3C7", "#FFFFB3", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#FCCDE5", "#D9D9D9", "#BC80BD", "#CCEBC5", "#FFED6F", "lightblue")
 ```
 
 ```{r n_resistant_samples_per_antibiotic}
 # Bar plot with number of resistant samples per antibiotic
 resistant_samples_per_antibiotic %>%
-  ggplot(aes(x = antibiotic, y = `resistant samples`, fill= antibiotic)) +
+  ggplot(aes(x = antibiotic, y = `resistant samples`, fill = antibiotic)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
@@ -336,8 +452,7 @@ args_data %>%
   ggplot(aes(x = antibiotic, y = n_args, fill = antibiotic), ) +
   geom_boxplot(outlier.shape = NA) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
-  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
   labs(x = "Antibiotic", y = "Number of resistant genes") +
   scale_fill_manual(values = antibiotics_color_palette) +
   scale_y_continuous(limits = c(0, 20)) +
@@ -357,9 +472,8 @@ card_snps_data %>%
   ggplot(aes(x = antibiotic, y = n_card_snps, fill = antibiotic)) +
   geom_boxplot() +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
-  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of CARD SNPs")+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  labs(x = "Antibiotic", y = "Number of SNPs") +
   scale_fill_manual(values = antibiotics_color_palette) +
   scale_y_continuous(limits = c(0, 10)) +
   theme(legend.position = "none")
@@ -369,14 +483,23 @@ card_snps_data %>%
 
 ```{r}
 card_snps_data_output_path <- paste0("data/results/card/card_snps_data", batch_number, "_cleaned.tsv")
+card_snps_data_latest_output_path <- "data/results/card/card_snps_data_latest_cleaned.tsv"
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
+card_snps_data_wide %>%
+  write_tsv(card_snps_data_latest_output_path)
 
 args_data_output_path <- paste0("data/results/resfinder/args_data", batch_number, "_cleaned.tsv")
+args_data_latest_output_path <- "data/results/resfinder/args_data_latest_cleaned.tsv"
 args_data %>%
   write_tsv(args_data_output_path)
+args_data %>%
+  write_tsv(args_data_latest_output_path)
 
 amr_labels_output_path <- paste0("data/results/data_collection_ncbi/amr_labels", batch_number, "_cleaned.tsv")
+amr_labels_latest_output_path <- "data/results/data_collection_ncbi/amr_labels_latest_cleaned.tsv"
 amr_labels %>%
   write_tsv(amr_labels_output_path)
+amr_labels %>%
+  write_tsv(amr_labels_latest_output_path)
 ```

@@ -1,7 +1,7 @@
 Data Cleaning
 ================
 Geovanny Risco
-June 04, 2023
+June 06, 2023
 
 - <a href="#1-import-libraries" id="toc-1-import-libraries">1 Import
   libraries</a>
@@ -12,12 +12,14 @@ June 04, 2023
   Clean and prepare data</a>
   - <a href="#41-args-from-resfinder" id="toc-41-args-from-resfinder">4.1
     ARGs from Resfinder</a>
-    - <a href="#411-null-values-detection"
-      id="toc-411-null-values-detection">4.1.1 Null values detection</a>
-    - <a href="#412-outliers-detection" id="toc-412-outliers-detection">4.1.2
+    - <a href="#411-overview-of-the-data"
+      id="toc-411-overview-of-the-data">4.1.1 Overview of the data</a>
+    - <a href="#412-null-values-detection"
+      id="toc-412-null-values-detection">4.1.2 Null values detection</a>
+    - <a href="#413-outliers-detection" id="toc-413-outliers-detection">4.1.3
       Outliers detection</a>
-    - <a href="#413-feature-engineering"
-      id="toc-413-feature-engineering">4.1.3 Feature engineering</a>
+    - <a href="#414-feature-engineering"
+      id="toc-414-feature-engineering">4.1.4 Feature engineering</a>
   - <a href="#42-snps-from-card" id="toc-42-snps-from-card">4.2 SNPs from
     CARD</a>
     - <a href="#421-filtering" id="toc-421-filtering">4.2.1 Filtering</a>
@@ -251,7 +253,33 @@ is resistance or not.
 - 1: resistance gene
 - 0: non-resistance gene
 
-### 4.1.1 Null values detection
+### 4.1.1 Overview of the data
+
+``` r
+# Sum of all different ARG genes (sum all columns that have at least one 1)
+args_data %>%
+  summarise_all(~ sum(.x == 1, na.rm = TRUE)) %>%
+  gather(key = "gene", value = "count") %>%
+  filter(count > 0) %>%
+  arrange(desc(count))
+```
+
+    ## # A tibble: 144 x 2
+    ##    gene        count
+    ##    <chr>       <int>
+    ##  1 aac(6')-Iaa  5282
+    ##  2 tet(A)       1533
+    ##  3 aph(3'')-Ib  1419
+    ##  4 aph(6)-Id    1333
+    ##  5 tet(B)       1135
+    ##  6 fosA7        1047
+    ##  7 sul2          978
+    ##  8 blaTEM-1B     786
+    ##  9 blaCMY-2      722
+    ## 10 sul1          688
+    ## # ... with 134 more rows
+
+### 4.1.2 Null values detection
 
 ``` r
 # Count number of nulls per sample
@@ -278,7 +306,7 @@ args_data %>%
 
 We have no nulls values for ARGs.
 
-### 4.1.2 Outliers detection
+### 4.1.3 Outliers detection
 
 ``` r
 # For each sample, how many resistance genes are present?
@@ -304,14 +332,16 @@ args_data %>%
     ## # ... with 6,198 more rows
 
 ``` r
-# Mean number of resistance genes per sample
+# Summary metrics for number of resistance genes per sample
 args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
-  summarise(mean(count)) %>%
-  pull()
+  summarise(mean = mean(count), std = sd(count), median = median(count), min = min(count), max = max(count))
 ```
 
-    ## [1] 3.627416
+    ## # A tibble: 1 x 5
+    ##    mean   std median   min   max
+    ##   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1  3.63  2.75      3     0    23
 
 ``` r
 # Boxplot summarizing above information
@@ -319,11 +349,49 @@ args_data %>%
   mutate(count = rowSums(select(., -sample_name))) %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
-  labs(x = "", y = "Number of resistance genes", title = "Distribution of resistance genes per sample") +
+  labs(x = "", y = "Number of resistance genes") +
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-9-1.png)<!-- -->
+![](figures/Boxplot%20for%20distribution%20of%20ARGs%20per%20sample-1.png)<!-- -->
+
+``` r
+n_args_samples <- nrow(args_data)
+```
+
+As can be seen in the boxplot, there are some samples that have a
+strange high number of resistance genes. These outliers can produce
+noise in the data, so we will need to set a theshold to remove them.
+
+``` r
+# Set threshold to remove outliers
+args_outliers_threshold <- 15
+```
+
+We will consider as anormal samples those that have more than 15
+resistance genes. We don’t know the reason behind this abnormality
+though, we will need to investigate further.
+
+``` r
+# Remove those samples that have more than the threshold of resistance genes
+args_data <- args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  filter(count <= args_outliers_threshold) %>%
+  select(-count)
+n_args_samples_without_outliers <- nrow(args_data)
+
+# Remake boxplot
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  ggplot(aes(x = "", y = count)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of resistance genes") +
+  theme_classic()
+```
+
+![](figures/Boxplot%20for%20distribution%20of%20ARGs%20per%20sample%20(without%20outliers)-1.png)<!-- -->
+
+After applying the threshold, we have removed a total of 17 samples.
 
 ``` r
 # Histogram with density of resistance genes per sample
@@ -332,16 +400,29 @@ args_data %>%
   ggplot(aes(x = count)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Number of resistance genes", y = "Density", title = "Distribution of resistance genes per sample") +
+  labs(x = "Number of resistance genes", y = "Density") +
   theme_classic()
 ```
 
     ## Warning: The dot-dot notation (`..density..`) was deprecated in ggplot2 3.4.0.
     ## i Please use `after_stat(density)` instead.
 
-![](figures/unnamed-chunk-9-2.png)<!-- -->
+![](figures/Histogram%20with%20distribution%20of%20ARGs%20per%20sample-1.png)<!-- -->
 
-### 4.1.3 Feature engineering
+Recalculate summary metrics after applying filters:
+
+``` r
+args_data %>%
+  mutate(count = rowSums(select(., -sample_name))) %>%
+  summarise(mean = mean(count), std = sd(count), median = median(count), min = min(count), max = max(count))
+```
+
+    ## # A tibble: 1 x 5
+    ##    mean   std median   min   max
+    ##   <dbl> <dbl>  <dbl> <dbl> <dbl>
+    ## 1  3.59  2.64      3     0    15
+
+### 4.1.4 Feature engineering
 
 As all of the columns we have in this table is boolean data, there is
 not much to do in terms of feature engineering. Hoewever, we have
@@ -360,7 +441,7 @@ args_data <- args_data %>%
 removed_ncols <- original_ncols - length(colnames(args_data))
 ```
 
-After the filtering, we have removed 17 columns.
+After the filtering, we have removed 21 columns.
 
 ## 4.2 SNPs from CARD
 
@@ -371,10 +452,13 @@ to the official [documentation](https://github.com/arpcard/rgi#id72).
 
 ### 4.2.1 Filtering
 
-We will be filtering by the following criteria: \* Column `Model_type`
-must be either `protein variant model` or `protein overexpression model`
-\* They must have a value within the column `SNPs_in_Best_Hit_ARO`.
-NOTE: this column can have multiple values separated by commas.
+We will be filtering by the following criteria:
+
+- Column `Model_type` must be either `protein variant model` or
+  `protein overexpression model`
+
+- They must have a value within the column `SNPs_in_Best_Hit_ARO`. NOTE:
+  this column can have multiple values separated by commas.
 
 ``` r
 # Filter by Model_type
@@ -394,17 +478,44 @@ card_snps_data <- card_snps_data %>%
 ### 4.2.2 Exploration/Visualization
 
 ``` r
+# Summary metrics number of SNPs per sample
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_snps = n()) %>%
+  summarise(mean = mean(n_snps), std = sd(n_snps), median = median(n_snps), min = min(n_snps), max = max(n_snps))
+```
+
+    ## # A tibble: 1 x 5
+    ##    mean   std median   min   max
+    ##   <dbl> <dbl>  <int> <int> <int>
+    ## 1  4.87  1.17      5     1     7
+
+``` r
 # Boxplot showing how many SNPs are present in each sample
 card_snps_data %>%
   group_by(SAMPLE_ID) %>%
   summarise(count = n()) %>%
   ggplot(aes(x = "", y = count)) +
   geom_boxplot() +
-  labs(x = "", y = "Number of SNPs", title = "Distribution of SNPs per sample") +
+  labs(x = "", y = "Number of SNPs") +
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-12-1.png)<!-- -->
+![](figures/Boxplot%20for%20distribution%20of%20SNPs%20per%20sample-1.png)<!-- -->
+
+Recalulate summary metrics after applying threshold:
+
+``` r
+card_snps_data %>%
+  group_by(SAMPLE_ID) %>%
+  summarise(n_snps = n()) %>%
+  summarise(mean = mean(n_snps), std = sd(n_snps), median = median(n_snps), min = min(n_snps), max = max(n_snps))
+```
+
+    ## # A tibble: 1 x 5
+    ##    mean   std median   min   max
+    ##   <dbl> <dbl>  <int> <int> <int>
+    ## 1  4.87  1.17      5     1     7
 
 ``` r
 # Histogram showing how many SNPs are present in each sample
@@ -414,11 +525,11 @@ card_snps_data %>%
   ggplot(aes(x = count)) +
   geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
   geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
-  labs(x = "Number of SNPs", y = "Density", title = "Distribution of SNPs per sample") +
+  labs(x = "Number of SNPs", y = "Density") +
   theme_classic()
 ```
 
-![](figures/unnamed-chunk-13-1.png)<!-- -->
+![](figures/Histogram%20of%20distribution%20of%20SNPs%20per%20sample-1.png)<!-- -->
 
 ### 4.2.3 Preparation
 
@@ -479,6 +590,8 @@ amr_labels <- amr_labels %>%
 
 ### 4.3.2 Cleaning
 
+#### 4.3.2.1 Null values analysis
+
 We will remove those antibiotics with more than 30% of null values.
 
 ``` r
@@ -519,11 +632,70 @@ knitr::kable(nulls_per_antibiotic)
 ``` r
 # Remove antibiotics with more than 30% of null values
 antibiotics_to_remove <- nulls_per_antibiotic %>%
-  filter(`% of null values` > 30) %>%
+  filter(`% of null values` > MAX_NULLS_PER_ANTIBIOTIC) %>%
   pull(antibiotic)
 amr_labels <- amr_labels %>%
   select(-all_of(antibiotics_to_remove))
+
+# Fill remaining null values with 0
+amr_labels <- amr_labels %>%
+  mutate_all(~ replace_na(.x, 0))
 ```
+
+A total of 9 antibiotics have been removed.
+
+#### 4.3.2.2 Outliers analysis
+
+``` r
+# Count number of resistant antibiotics per sample
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  select(`SampleID`, n_resistant) %>%
+  arrange(desc(n_resistant))
+```
+
+    ## # A tibble: 6,207 x 2
+    ##    SampleID        n_resistant
+    ##    <chr>                 <dbl>
+    ##  1 GCA_008552695.1          11
+    ##  2 GCA_008478965.1          11
+    ##  3 GCA_008474545.1          11
+    ##  4 GCA_008408645.1          11
+    ##  5 GCF_001478975.1          11
+    ##  6 GCA_007188055.1          10
+    ##  7 GCA_007760595.1          10
+    ##  8 GCA_007191495.1          10
+    ##  9 GCA_007818525.1          10
+    ## 10 GCA_007196455.1          10
+    ## # ... with 6,197 more rows
+
+``` r
+# Boxplot summarizing above information
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  ggplot(aes(x = "", y = n_resistant)) +
+  geom_boxplot() +
+  labs(x = "", y = "Number of antibiotics") +
+  theme_classic()
+```
+
+![](figures/Boxplot%20for%20distribution%20of%20resistant%20antibiotics%20per%20sample-1.png)<!-- -->
+
+``` r
+# Histogram with density of resistant antibiotics per sample
+amr_labels %>%
+  mutate(n_resistant = rowSums(select(., -`SampleID`))) %>%
+  ggplot(aes(x = n_resistant)) +
+  geom_histogram(aes(y = ..density..), bins = 30, color = "#000000", fill = "#0099F8") +
+  geom_density(color = "#000000", fill = "#F85700", alpha = 0.6) +
+  labs(x = "Number of antibiotics", y = "Density") +
+  theme_classic()
+```
+
+![](figures/Histogram%20with%20distribution%20of%20resistant%20antibiotics%20per%20sample-1.png)<!-- -->
+
+We do not observe relevant outliers in this case, so we will not apply
+any threshold.
 
 ### 4.3.3 Exploration
 
@@ -557,7 +729,7 @@ knitr::kable(resistant_samples_per_antibiotic)
 ``` r
 # Bar plot with number of resistant samples per antibiotic
 resistant_samples_per_antibiotic %>%
-  ggplot(aes(x = antibiotic, y = `resistant samples`, fill= antibiotic)) +
+  ggplot(aes(x = antibiotic, y = `resistant samples`, fill = antibiotic)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
@@ -584,15 +756,12 @@ args_data %>%
   ggplot(aes(x = antibiotic, y = n_args, fill = antibiotic), ) +
   geom_boxplot(outlier.shape = NA) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
-  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
   labs(x = "Antibiotic", y = "Number of resistant genes") +
   scale_fill_manual(values = antibiotics_color_palette) +
   scale_y_continuous(limits = c(0, 20)) +
   theme(legend.position = "none")
 ```
-
-    ## Warning: Removed 17 rows containing non-finite values (`stat_boxplot()`).
 
 ![](figures/median_number_resistant_genes_per_antibiotic-1.png)<!-- -->
 
@@ -609,9 +778,8 @@ card_snps_data %>%
   ggplot(aes(x = antibiotic, y = n_card_snps, fill = antibiotic)) +
   geom_boxplot() +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 50, hjust = 1))+
-  #theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
-  labs(x = "Antibiotic", y = "Number of CARD SNPs")+
+  theme(axis.text.x = element_text(angle = 50, hjust = 1)) +
+  labs(x = "Antibiotic", y = "Number of SNPs") +
   scale_fill_manual(values = antibiotics_color_palette) +
   scale_y_continuous(limits = c(0, 10)) +
   theme(legend.position = "none")
@@ -623,14 +791,23 @@ card_snps_data %>%
 
 ``` r
 card_snps_data_output_path <- paste0("data/results/card/card_snps_data", batch_number, "_cleaned.tsv")
+card_snps_data_latest_output_path <- "data/results/card/card_snps_data_latest_cleaned.tsv"
 card_snps_data_wide %>%
   write_tsv(card_snps_data_output_path)
+card_snps_data_wide %>%
+  write_tsv(card_snps_data_latest_output_path)
 
 args_data_output_path <- paste0("data/results/resfinder/args_data", batch_number, "_cleaned.tsv")
+args_data_latest_output_path <- "data/results/resfinder/args_data_latest_cleaned.tsv"
 args_data %>%
   write_tsv(args_data_output_path)
+args_data %>%
+  write_tsv(args_data_latest_output_path)
 
 amr_labels_output_path <- paste0("data/results/data_collection_ncbi/amr_labels", batch_number, "_cleaned.tsv")
+amr_labels_latest_output_path <- "data/results/data_collection_ncbi/amr_labels_latest_cleaned.tsv"
 amr_labels %>%
   write_tsv(amr_labels_output_path)
+amr_labels %>%
+  write_tsv(amr_labels_latest_output_path)
 ```
