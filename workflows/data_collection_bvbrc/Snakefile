@@ -11,6 +11,7 @@ rule encode_query_string:
         import urllib.parse
         taxa = config["tax_ids"]
         filters = []
+        filters.append("eq(pmid,31665255)")
         filters.append("eq(evidence,Laboratory Method)")
         filters.append(
             "or(" + ",".join(["eq(taxon_id," + str(taxon) + ")" for taxon in taxa]) + ")"
@@ -38,10 +39,11 @@ rule download_samples:
 
 rule get_amr_labels:
     input:
+        "results/BVBRC_genome_amr.csv",
         config["samples_dir"]+"/.samples_downloading_complete"
     output:
         "results/amr_labels.csv"
     conda:
         "envs/parsing.yaml"
     shell:
-        "python scripts/get_amr_labels.py --bvbrc-file {input} --output {output}"
+        "python scripts/get_amr_labels.py --bvbrc-file {input[0]} --output {output}"
