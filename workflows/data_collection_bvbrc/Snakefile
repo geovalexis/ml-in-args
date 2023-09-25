@@ -2,7 +2,6 @@ configfile: "config.yaml"
 
 rule all:
     input:
-        config["samples_dir"],
         "results/amr_labels.csv"
 
 rule encode_query_string:
@@ -33,12 +32,9 @@ rule download_samples:
     input:
         "results/BVBRC_genome_amr.csv"
     output:
-        directory(config["samples_dir"])
+        config["samples_dir"]+"/.samples_downloading_complete"
     shell:
-        """
-        sh scripts/download_samples.sh {input} {output}
-        touch {output}/.samples_downloading_complete
-        """
+        "sh scripts/download_samples.sh {input} {config[samples_dir]} && touch {output}"
 
 rule get_amr_labels:
     input:
