@@ -1,15 +1,33 @@
-configfile: "../config.yaml"
+configfile: "config.yaml"
 
 rule all:
     input:
         config["samples_dir"],
         "results/amr_labels.csv"
 
+rule encode_query_string:
+    output:
+        "results/encoded_query_string.txt"
+    run:
+        import urllib.parse
+        taxa = config["tax_ids"]
+        filters = []
+        filters.append("eq(evidence,Laboratory Method)")
+        filters.append(
+            "or(" + ",".join(["eq(taxon_id," + str(taxon) + ")" for taxon in taxa]) + ")"
+        )
+        url_filter = "and(" + ",".join(filters) + ")" + "&sort(id)&limit(4446)"
+        encoded_query = urllib.parse.quote_plus(url_filter)
+        with open(output[0], "w") as f:
+            f.write(encoded_query)
+
 rule download_metadata:
+    input:
+        "results/encoded_query_string.txt"
     output:
         "results/BVBRC_genome_amr.csv"
     shell:
-        "sh scripts/download_metadata.sh '{config[bv-brc_query]}' {output}"
+        "sh scripts/download_metadata.sh $(cat {input}) {output}"
 
 rule download_samples:
     input:
@@ -17,11 +35,14 @@ rule download_samples:
     output:
         directory(config["samples_dir"])
     shell:
-        "sh scripts/download_samples.sh {input} {output}"
+        """
+        sh scripts/download_samples.sh {input} {output}
+        touch {output}/.samples_downloading_complete
+        """
 
 rule get_amr_labels:
     input:
-        "results/BVBRC_genome_amr.csv"
+        config["samples_dir"]+"/.samples_downloading_complete"
     output:
         "results/amr_labels.csv"
     conda:
