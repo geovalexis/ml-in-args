@@ -1,24 +1,38 @@
 import logging
 
+import numpy as np
 import pandas as pd
 import typer
 
 logger = logging.getLogger(__name__)
 
-SIGN_2_LABEL = {
-    "<=": 0,
-    "=": 0,
-    ">": 1,
+MEASUREMENT_SIGN_2_PHENOTYPE = {
+    "<": "Susceptible",
+    "<=": "Susceptible",
+    ">=": "Resistant",
+    "=": "Susceptible",
+    ">": "Resistant",
+    "==": "Intermediate",
+    np.nan: np.nan,
 }
 
 
 def process_amr_labels(
     bvbrc_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    bvbrc_pivot = bvbrc_df.pivot(
-        index="Genome ID", columns="Antibiotic", values="Measurement Sign"
+    # TODO: move this logic to data cleaning step (in R)
+    bvbrc_df_no_dups = bvbrc_df.drop_duplicates()
+    bvbrc_df_no_dups = bvbrc_df_no_dups.drop_duplicates(["Genome ID", "Antibiotic"])
+    bvbrc_df_no_dups.where(bvbrc_df_no_dups["Resistant Phenotype"] != np.nan)
+    bvbrc_df_no_dups["Resistant Phenotype"] = bvbrc_df_no_dups.apply(
+        lambda x: MEASUREMENT_SIGN_2_PHENOTYPE[x["Measurement Sign"]]
+        if pd.isna(x["Resistant Phenotype"])
+        else x["Resistant Phenotype"],
+        axis=1,
     )
-    bvbrc_pivot = bvbrc_pivot.applymap(lambda x: SIGN_2_LABEL[x])
+    bvbrc_pivot = bvbrc_df_no_dups.pivot(
+        index="Genome ID", columns="Antibiotic", values="Resistant Phenotype"
+    )
     return bvbrc_pivot
 
 
