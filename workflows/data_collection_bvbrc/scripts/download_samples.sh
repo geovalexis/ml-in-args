@@ -12,9 +12,16 @@ genome_ids=$(awk -F "\"*,\"*" '{print $2}' $bvbrc_file | tail -n +2 | sort | uni
 
 for genome_id in $genome_ids
 do
+  # Create directory for taxon ID
+  # Genome ID has the following format: taxId.sampleId. Ex. 1351.832
+  taxon_id=$(echo $genome_id | cut -d '.' -f 1)
+  if [ ! -d $output_dir/$taxon_id ]; then
+    mkdir $output_dir/$taxon_id
+  fi
+
   # Skip if genome already exists in output directory
-  if [ -f "$output_dir/$genome_id.fna" ]; then
-    echo "Genome with ID: $genome_id already exists in $output_dir"
+  if [ -f "$output_dir/$taxon_id/$genome_id.fna" ]; then
+    echo "Genome with ID: $genome_id already exists in $output_dir/$taxon_id"
     continue
   fi
 
@@ -26,10 +33,10 @@ do
 
   # Unzip and move FASTA to output directory
   unzip $output_filename
-  if [ ! -d $output_dir ]; then
-    mkdir $output_dir
+  if [ ! -d $output_dir/$taxon_id ]; then
+    mkdir $output_dir/$taxon_id
   fi
-  mv $genome_id/$genome_id.fna $output_dir
+  mv $genome_id/$genome_id.fna $output_dir/$taxon_id
 
   # Clean up
   rm $output_filename
