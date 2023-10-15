@@ -1,2 +1,2 @@
-use_azure: true
-samples_dir: "test_samples"
+use_azure: false
+samples_dir: "../../data/test_samples"
