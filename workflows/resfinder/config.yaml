@@ -1,0 +1,2 @@
+use_azure: false
+samples_dir: "../../data/test_samples"

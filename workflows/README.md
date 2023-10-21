@@ -13,17 +13,17 @@ a way to run them in parallell and in the correct order.
 
 ## Usage
 
-Before running the workflows, make sure to edit the `config.yaml` file to set the correct paths and config variables. The following variables are required:
-* `biosamples_accessions`: CSV file with the biosamples accessions to download from NCBI
-* `samples_dir`: directory where the samples will be downloaded
-
+Before running the workflows, make sure to edit the `config.yaml` file to set the correct paths and config variables.
+The required variables depend on the workflow, but they are all documented in the `config.yaml` file.
 Each of the folders contains a `Snakefile` that can be run with `snakemake` with the following command:
 
 ```bash
 snakemake --use-conda --cores <number_of_cores>
 ```
 
+Some workflows may support running in the Azure cloud. To do so, you will need to correctly configure the credentials. 
+A bash script is provided for that end.
+
 ## Future improvements
 
-* Obtain and automate data collection from [BV-BRC](https://www.bv-brc.org/)
 * Merge ARGs data from CARD and Resfinder

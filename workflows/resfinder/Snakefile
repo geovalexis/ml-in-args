@@ -1,11 +1,13 @@
-configfile: "../config.yaml"
+configfile: "config.yaml"
 
-species_paths = [folder for folder in os.scandir(config["samples_dir"]) if folder.is_dir()]
-samples_by_specie = {
-    specie.name: [os.path.splitext(sample.name)[0] for sample in os.scandir(specie) if sample.name.endswith(".fna")] 
-    for specie in species_paths
-}
-
+if config["use_azure"]:
+    from snakemake.remote.AzBlob import RemoteProvider as AzureRemoteProvider
+    from os import getenv
+    AS = AzureRemoteProvider() # assumes env vars AZ_BLOB_ACCOUNT_URL and possibly AZ_BLOB_CREDENTIAL are set
+    container_name = getenv("AZ_BLOB_PREFIX", "")
+    species, samples = AS.glob_wildcards(container_name+"/"+config["samples_dir"]+"/{species}/{samples}.fna")
+else:
+    species, samples = glob_wildcards(config["samples_dir"]+"/{species}/{samples}.fna")
 
 rule all:
     input:
@@ -13,45 +15,49 @@ rule all:
 
 rule download_databases:
     output:
-        directory("databases")
+        "databases.gz",
     shell:
         """
-        git clone https://bitbucket.org/genomicepidemiology/resfinder_db/ databases/resfinder_db
+        git clone https://bitbucket.org/genomicepidemiology/resfinder_db/
+        tar -czvf {output} resfinder_db
         """
-        #git clone https://bitbucket.org/genomicepidemiology/pointfinder_db/ databases/pointfinder_db # Not needed anymore
 
 rule compute_args:
     input:
         fasta=config["samples_dir"]+"/{specie_id}/{sample}.fna",
-        databases_folder="databases/"
+        databases_folder="databases.gz"
     output:
-        temp(directory("results/args/{specie_id}/{sample}"))
+        temp("results/args/{specie_id}/{sample}.tar.gz")
     conda:
         "envs/resfinder.yaml"
     shell:
         """
-        python -m resfinder -o {output} \
-        --min_cov 0.6 --threshold 0.8 --acquired -ifa {input.fasta} \
-        -db_res {input.databases_folder}/resfinder_db
+        tar -xzvf {input.databases_folder}
+        python -m resfinder -o results/args/{wildcards.specie_id}/{wildcards.sample} \
+            --min_cov 0.6 --threshold 0.8 --acquired -ifa {input.fasta} \
+            -db_res resfinder_db
+        tar -czvf {output} results/args/{wildcards.specie_id}/{wildcards.sample}
         """
+
 rule parse_results:
     input:
-        results_dir="results/args/{specie_id}/{sample}"
+        results_dir="results/args/{specie_id}/{sample}.tar.gz"
     output:
-       temp( "results/args_parsed/{specie_id}/{sample}.json")
+       temp("results/args_parsed/{specie_id}/{sample}.json")
     conda:
         "envs/parsing.yaml"
     shell:
         """
+        tar -xzvf {input.results_dir}
         python scripts/resfinder_parser.py \
-        --results-dir {input.results_dir} \
+        --results-dir results/args/{wildcards.specie_id}/{wildcards.sample} \
         --output {output}
         """
 
 rule create_table:
     input:
-        ["results/args_parsed/{specie_id}/{sample}.json".format(specie_id=specie_id, sample=sample)  
-        for specie_id in samples_by_specie for sample in samples_by_specie[specie_id]]
+        expand("results/args_parsed/{specie_id}/{sample}.json",
+               zip, specie_id=species, sample=samples)
     output:
         "results/args_table.csv"
     conda:

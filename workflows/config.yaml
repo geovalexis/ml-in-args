@@ -1,4 +1,3 @@
-bv-brc_query: "eq(genome_id%2C*)%26genome(eq(taxon_lineage_ids%2C2))%26and(eq(taxon_id%2C1351)%2Ceq(pmid%2C29617860))%26sort(id)%26limit(1455)"
 samples_dir: "../../data/samples"
 tmp_dir: "../../data/tmp"
 biosamples_accessions: "../../data/aac.00483-19-s0001.csv"
